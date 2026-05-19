@@ -1,0 +1,22 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Ignore Database
+siwes.db
+siwes.db-wal
+siwes.db-shm
+database.sqlite
+*.sqlite
+
+# Ignore user uploads
+uploads/
+
+# Ignore Python cache
+__pycache__/
+*.py[cod]

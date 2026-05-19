@@ -1,0 +1,86 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Cormorant Garamond", serif;
+  --font-sans: "Inter", sans-serif;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: #1A1A1A;
+}
+
+/* ── Spinner ── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+
+
+/* ── Print Styles ── */
+@media print {
+  .no-print, nav, aside, button {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+  }
+  .print-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .print-table th,
+  .print-table td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    font-size: 12px;
+  }
+}
+
+/* ── Notification Bell Pulse ── */
+@keyframes badge-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+.notification-badge {
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+
+/* ── Smooth Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+/* ── Leaflet Map Overrides ── */
+/* Make popups render cleanly */
+.leaflet-popup-content-wrapper {
+  border-radius: 16px !important;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15) !important;
+  padding: 0 !important;
+  border: 1px solid #e5e7eb;
+}
+.leaflet-popup-content {
+  margin: 12px 14px !important;
+  line-height: 1.5 !important;
+  font-size: 13px !important;
+}
+.leaflet-popup-tip-container {
+  margin-top: -1px;
+}
+/* Prevent default blue dot from showing on divIcon markers */
+.siwes-marker {
+  background: none !important;
+  border: none !important;
+}
+
+/* ── Sleek Custom Scrollbar Hide Utility ── */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
