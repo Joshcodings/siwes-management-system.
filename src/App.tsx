@@ -1193,7 +1193,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
           >
             <Menu size={22} />
           </button>
-          <h2 className="font-serif text-xl font-medium text-[#5A5A40]">SIWES</h2>
+          <h2 className="font-serif text-xl font-extrabold tracking-wider text-[#5A5A40]">SIWES</h2>
         </div>
         <NotificationBell token={token} />
       </div>
@@ -1217,7 +1217,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
               className="fixed inset-y-0 left-0 w-64 bg-white p-6 flex flex-col z-50 md:hidden shadow-2xl"
             >
               <div className="flex items-center justify-between mb-8">
-                <h2 className="font-serif text-2xl font-medium text-[#5A5A40]">SIWES</h2>
+                <h2 className="font-serif text-2xl font-extrabold tracking-wider text-[#5A5A40]">SIWES</h2>
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="p-1.5 hover:bg-gray-50 rounded-xl text-gray-400 cursor-pointer"
@@ -1303,7 +1303,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
         {/* Desktop Sidebar (hidden on mobile) */}
         <div className="hidden md:flex w-64 bg-white border-r border-black/5 p-6 flex flex-col shrink-0">
           <div className="mb-10 flex items-center justify-between">
-            <h2 className="font-serif text-2xl font-medium text-[#5A5A40]">SIWES</h2>
+            <h2 className="font-serif text-2xl font-extrabold tracking-wider text-[#5A5A40]">SIWES</h2>
             <NotificationBell token={token} />
           </div>
 
@@ -1393,20 +1393,20 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                 <p className="text-sm md:text-base text-gray-500 mt-1">Here's your SIWES progress at a glance.</p>
               </header>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white p-6 rounded-[24px] border border-black/5 shadow-sm">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Current Status</p>
-                  <p className="text-2xl font-medium text-[#5A5A40]">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+                <div className="col-span-2 md:col-span-1 bg-white p-5 md:p-6 rounded-[20px] md:rounded-[24px] border border-black/5 shadow-sm">
+                  <p className="text-[10px] md:text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1 md:mb-2">Current Status</p>
+                  <p className="text-lg md:text-2xl font-medium text-[#5A5A40] truncate">
                     {profile?.assigned_company_id ? 'In Training' : 'Placement Pending'}
                   </p>
                 </div>
-                <div className="bg-white p-6 rounded-[24px] border border-black/5 shadow-sm">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Logs Submitted</p>
-                  <p className="text-2xl font-medium text-[#5A5A40]">{logbook.length}</p>
+                <div className="bg-white p-5 md:p-6 rounded-[20px] md:rounded-[24px] border border-black/5 shadow-sm">
+                  <p className="text-[10px] md:text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1 md:mb-2">Logs Submitted</p>
+                  <p className="text-lg md:text-2xl font-medium text-[#5A5A40]">{logbook.length}</p>
                 </div>
-                <div className="bg-white p-6 rounded-[24px] border border-black/5 shadow-sm">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Verified Logs</p>
-                  <p className="text-2xl font-medium text-emerald-600">
+                <div className="bg-white p-5 md:p-6 rounded-[20px] md:rounded-[24px] border border-black/5 shadow-sm">
+                  <p className="text-[10px] md:text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1 md:mb-2">Verified Logs</p>
+                  <p className="text-lg md:text-2xl font-medium text-emerald-600">
                     {logbook.filter(l => l.verification_status === 'VERIFIED').length}
                   </p>
                 </div>

@@ -12,6 +12,8 @@ import helmet from "helmet";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
 
+import fs from "fs";
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const JWT_SECRET = process.env.JWT_SECRET || "siwes-super-secret-jwt-key-2025";
 
@@ -29,7 +31,12 @@ const transporter = nodemailer.createTransport({
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'uploads/')
+    // Ensure folder exists before writing to it
+    const uploadPath = path.join(__dirname, 'uploads');
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+    cb(null, uploadPath);
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
@@ -39,6 +46,12 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 async function startServer() {
+  // Ensure uploads directory exists on start
+  const uploadPath = path.join(__dirname, 'uploads');
+  if (!fs.existsSync(uploadPath)) {
+    fs.mkdirSync(uploadPath, { recursive: true });
+  }
+  
   await initDb();
   const app = express();
 
@@ -620,8 +633,8 @@ async function startServer() {
       const company: any = await db.get("SELECT * FROM companies WHERE id = ?", student.assigned_company_id);
       
       // Prioritize registered internship workplace coordinates, fallback to company address
-      const targetLat = student.internship_latitude !== null ? student.internship_latitude : company.latitude;
-      const targetLon = student.internship_longitude !== null ? student.internship_longitude : company.longitude;
+      const targetLat = student.internship_latitude != null ? student.internship_latitude : company.latitude;
+      const targetLon = student.internship_longitude != null ? student.internship_longitude : company.longitude;
       
       const distance = getDistance(latitude, longitude, targetLat, targetLon);
       const accuracyAdjustment = Math.min(accuracy || 0, 500); // Allow up to 500m fallback error tolerance
