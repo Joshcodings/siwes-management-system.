@@ -3,6 +3,7 @@ import { createServer as createViteServer } from "vite";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import db, { initDb } from "./src/db";
+import { seedCompanies } from "./src/companies_list";
 import { fileURLToPath } from "url";
 import path from "path";
 import { spawnSync, spawn } from "child_process";
@@ -180,33 +181,20 @@ async function startServer() {
 
   app.get("/api/seed", async (req, res) => {
     try {
-      const companies = [
-        { name: "Paystack", email: "careers@paystack.com", industry_type: "FinTech", required_skills: "[\"React\", \"Node.js\", \"TypeScript\", \"Go\", \"SQL\"]", address: "Ikeja, Lagos", latitude: 6.6018, longitude: 3.3515, allowed_radius: 500 },
-        { name: "Flutterwave", email: "hr@flutterwavego.com", industry_type: "FinTech", required_skills: "[\"Java\", \"Spring Boot\", \"React\", \"Cybersecurity\", \"Python\"]", address: "Lekki, Lagos", latitude: 6.4382, longitude: 3.4905, allowed_radius: 500 },
-        { name: "Andela", email: "jobs@andela.com", industry_type: "Software Development", required_skills: "[\"React\", \"Python\", \"Django\", \"AWS\", \"Communication\"]", address: "Lagos", latitude: 6.5244, longitude: 3.3792, allowed_radius: 1000 },
-        { name: "MTN Nigeria", email: "careers.ng@mtn.com", industry_type: "Telecommunications", required_skills: "[\"Networking\", \"Linux\", \"Telecommunications\", \"Data Analysis\", \"Project Management\"]", address: "Ikoyi, Lagos", latitude: 6.4526, longitude: 3.4293, allowed_radius: 400 },
-        { name: "Interswitch", email: "careers@interswitchgroup.com", industry_type: "FinTech", required_skills: "[\"C#\", \".NET\", \"SQL Server\", \"System Architecture\", \"Payment Systems\"]", address: "Victoria Island, Lagos", latitude: 6.4281, longitude: 3.4219, allowed_radius: 300 },
-        { name: "Kuda Bank", email: "careers@kuda.com", industry_type: "Banking & Finance", required_skills: "[\"Kotlin\", \"Swift\", \"C#\", \"SQL\", \"Product Design\"]", address: "Yaba, Lagos", latitude: 6.5054, longitude: 3.3736, allowed_radius: 300 },
-        { name: "PiggyVest", email: "careers@piggyvest.com", industry_type: "FinTech", required_skills: "[\"Node.js\", \"React\", \"MongoDB\", \"Marketing\", \"Customer Support\"]", address: "Victoria Island, Lagos", latitude: 6.4253, longitude: 3.4239, allowed_radius: 200 },
-        { name: "Semicolon Africa", email: "hello@semicolon.africa", industry_type: "Education & Tech", required_skills: "[\"Java\", \"Python\", \"Design Thinking\", \"Problem Solving\", \"Web Development\"]", address: "Yaba, Lagos", latitude: 6.5070, longitude: 3.3740, allowed_radius: 300 },
-        { name: "eTranzact", email: "hr@etranzact.com", industry_type: "Payment Systems", required_skills: "[\"Java\", \"Oracle\", \"Linux\", \"Cybersecurity\", \"Networking\"]", address: "Victoria Island, Lagos", latitude: 6.4312, longitude: 3.4300, allowed_radius: 400 },
-        { name: "Seamfix", email: "careers@seamfix.com", industry_type: "Software Development", required_skills: "[\"Java\", \"React\", \"Android\", \"Data Analysis\", \"Biometrics\"]", address: "Lekki, Lagos", latitude: 6.4428, longitude: 3.4735, allowed_radius: 500 }
-      ];
-
       await db.transaction(async () => {
         await db.run("UPDATE student_profiles SET assigned_company_id = NULL");
         await db.run("DELETE FROM applications");
         await db.run("DELETE FROM logbook_entries");
         await db.run("DELETE FROM companies");
-        for (const comp of companies) {
+        for (const comp of seedCompanies) {
           await db.run(
-            "INSERT INTO companies (name, email, industry_type, required_skills, address, latitude, longitude, allowed_radius) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            comp.name, comp.email, comp.industry_type, comp.required_skills, comp.address, comp.latitude, comp.longitude, comp.allowed_radius
+            "INSERT INTO companies (name, email, industry_type, required_skills, address, latitude, longitude, allowed_radius) VALUES (?, ?, ?, ?, ?, ?, ?, 500)",
+            comp.name, comp.email, comp.industry_type, JSON.stringify(comp.skills), comp.address, comp.lat, comp.lon
           );
         }
       });
 
-      res.json({ success: true, count: companies.length });
+      res.json({ success: true, count: seedCompanies.length });
     } catch (e: any) {
       res.status(500).json({ error: e.message });
     }
