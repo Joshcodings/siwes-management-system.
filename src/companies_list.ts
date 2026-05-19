@@ -135,4 +135,23 @@ export const seedCompanies: CompanySeedData[] = [
 
   // ASABA
   { name: 'Asaba Tech Founders', email: 'info@asabatechfounders.com', industry_type: 'Startup Hub', skills: ['JavaScript','Entrepreneurship','Product'], address: 'Asaba, Delta State', lat: 6.1930, lon: 6.7360 },
+
+  // ADDITIONAL COMPANIES FROM seed_companies.ts
+  { name: 'Google', email: 'careers@google.com', industry_type: 'Technology', skills: ['Python', 'Java', 'Machine Learning', 'Data Structures'], address: '1600 Amphitheatre Pkwy, Mountain View, CA 94043', lat: 37.422, lon: -122.0841 },
+  { name: 'Microsoft', email: 'internships@microsoft.com', industry_type: 'Software Development', skills: ['C#', '.NET', 'Cloud Computing', 'TypeScript'], address: 'One Microsoft Way, Redmond, WA 98052', lat: 47.6422, lon: -122.1368 },
+  { name: 'Paystack', email: 'careers@paystack.com', industry_type: 'Fintech', skills: ['Node.js', 'React', 'TypeScript', 'SQL'], address: '3A Ladoke Akintola, Ikeja GRA, Lagos, Nigeria', lat: 6.5862, lon: 3.3562 },
+  { name: 'Andela', email: 'talent@andela.com', industry_type: 'Technology Services', skills: ['JavaScript', 'Python', 'React', 'Agile'], address: '235 Ikorodu Rd, Ilupeju, Lagos, Nigeria', lat: 6.548, lon: 3.366 },
+  { name: 'Flutterwave', email: 'interns@flutterwavego.com', industry_type: 'Fintech', skills: ['Java', 'Go', 'React', 'Kubernetes'], address: '8 Providence Street, Lekki Phase 1, Lagos, Nigeria', lat: 6.446, lon: 3.472 },
+
+  // ADDITIONAL COMPANIES FROM seed.js
+  { name: "Paystack", email: "careers@paystack.com", industry_type: "FinTech", skills: ["React", "Node.js", "TypeScript", "Go", "SQL"], address: "Ikeja, Lagos", lat: 6.6018, lon: 3.3515 },
+  { name: "Flutterwave", email: "hr@flutterwavego.com", industry_type: "FinTech", skills: ["Java", "Spring Boot", "React", "Cybersecurity", "Python"], address: "Lekki, Lagos", lat: 6.4382, lon: 3.4905 },
+  { name: "Andela", email: "jobs@andela.com", industry_type: "Software Development", skills: ["React", "Python", "Django", "AWS", "Communication"], address: "Lagos", lat: 6.5244, lon: 3.3792 },
+  { name: "MTN Nigeria", email: "careers.ng@mtn.com", industry_type: "Telecommunications", skills: ["Networking", "Linux", "Telecommunications", "Data Analysis", "Project Management"], address: "Ikoyi, Lagos", lat: 6.4526, lon: 3.4293 },
+  { name: "Interswitch", email: "careers@interswitchgroup.com", industry_type: "FinTech", skills: ["C#", ".NET", "SQL Server", "System Architecture", "Payment Systems"], address: "Victoria Island, Lagos", lat: 6.4281, lon: 3.4219 },
+  { name: "Kuda Bank", email: "careers@kuda.com", industry_type: "Banking & Finance", skills: ["Kotlin", "Swift", "C#", "SQL", "Product Design"], address: "Yaba, Lagos", lat: 6.5054, lon: 3.3736 },
+  { name: "PiggyVest", email: "careers@piggyvest.com", industry_type: "FinTech", skills: ["Node.js", "React", "MongoDB", "Marketing", "Customer Support"], address: "Victoria Island, Lagos", lat: 6.4253, lon: 3.4239 },
+  { name: "Semicolon Africa", email: "hello@semicolon.africa", industry_type: "Education & Tech", skills: ["Java", "Python", "Design Thinking", "Problem Solving", "Web Development"], address: "Yaba, Lagos", lat: 6.5070, lon: 3.3740 },
+  { name: "eTranzact", email: "hr@etranzact.com", industry_type: "Payment Systems", skills: ["Java", "Oracle", "Linux", "Cybersecurity", "Networking"], address: "Victoria Island, Lagos", lat: 6.4312, lon: 3.4300 },
+  { name: "Seamfix", email: "careers@seamfix.com", industry_type: "Software Development", skills: ["Java", "React", "Android", "Data Analysis", "Biometrics"], address: "Lekki, Lagos", lat: 6.4428, lon: 3.4735 }
 ];
