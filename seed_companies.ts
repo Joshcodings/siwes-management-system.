@@ -48,15 +48,27 @@ const companies = [
     }
 ];
 
-const insert = db.prepare(`
-  INSERT INTO companies (name, email, industry_type, required_skills, address, latitude, longitude)
-  VALUES (@name, @email, @industry_type, @required_skills, @address, @latitude, @longitude)
-`);
-
-db.transaction(() => {
-    for (const company of companies) {
-        insert.run(company);
+async function seed() {
+    try {
+        await db.transaction(async () => {
+            for (const company of companies) {
+                await db.run(
+                    `INSERT INTO companies (name, email, industry_type, required_skills, address, latitude, longitude)
+                     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                    company.name,
+                    company.email,
+                    company.industry_type,
+                    company.required_skills,
+                    company.address,
+                    company.latitude,
+                    company.longitude
+                );
+            }
+        });
+        console.log('Seed completed: Added 5 real-world companies.');
+    } catch (e: any) {
+        console.error('Seed failed:', e.message);
     }
-})();
+}
 
-console.log('Seed completed: Added 5 real-world companies.');
+seed();

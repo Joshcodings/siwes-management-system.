@@ -39,7 +39,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 async function startServer() {
-  initDb();
+  await initDb();
   const app = express();
 
   // --- SECURITY MIDDLEWARE ---
@@ -68,7 +68,6 @@ async function startServer() {
     app.use('/api/auth/login', authLimiter);
     app.use('/api/auth/forgot-password', authLimiter);
   }
-
 
   app.use(express.json());
   app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -135,7 +134,7 @@ async function startServer() {
   }
 
   // --- AUTH ROUTES ---
-  app.post("/api/auth/register", (req, res) => {
+  app.post("/api/auth/register", async (req, res) => {
     const { email, password, fullName, matNumber } = req.body;
     const role = 'STUDENT'; // Force student role based on new requirement
     
@@ -147,18 +146,18 @@ async function startServer() {
 
     const formattedMat = matNumber.trim().toUpperCase();
     
-    // Check if matric number is already in use
-    const existingMat = db.prepare("SELECT user_id FROM student_profiles WHERE mat_number = ?").get(formattedMat);
-    if (existingMat) {
-      return res.status(400).json({ error: `Matriculation number ${formattedMat} is already in use.` });
-    }
-
-    const hashedPassword = bcrypt.hashSync(password, 10);
     try {
-      const result = db.prepare("INSERT INTO users (email, password, full_name, role) VALUES (?, ?, ?, ?)").run(email, hashedPassword, fullName, role);
+      // Check if matric number is already in use
+      const existingMat = await db.get("SELECT user_id FROM student_profiles WHERE mat_number = ?", formattedMat);
+      if (existingMat) {
+        return res.status(400).json({ error: `Matriculation number ${formattedMat} is already in use.` });
+      }
+
+      const hashedPassword = bcrypt.hashSync(password, 10);
+      const result = await db.run("INSERT INTO users (email, password, full_name, role) VALUES (?, ?, ?, ?)", email, hashedPassword, fullName, role);
       const userId = result.lastInsertRowid;
 
-      db.prepare("INSERT INTO student_profiles (user_id, course, department, mat_number) VALUES (?, ?, ?, ?)").run(userId, "Unspecified", "Unspecified", formattedMat);
+      await db.run("INSERT INTO student_profiles (user_id, course, department, mat_number) VALUES (?, ?, ?, ?)", userId, "Unspecified", "Unspecified", formattedMat);
 
       res.json({ success: true });
     } catch (e: any) {
@@ -166,7 +165,7 @@ async function startServer() {
     }
   });
 
-  app.get("/api/seed", (req, res) => {
+  app.get("/api/seed", async (req, res) => {
     try {
       const companies = [
         { name: "Paystack", email: "careers@paystack.com", industry_type: "FinTech", required_skills: "[\"React\", \"Node.js\", \"TypeScript\", \"Go\", \"SQL\"]", address: "Ikeja, Lagos", latitude: 6.6018, longitude: 3.3515, allowed_radius: 500 },
@@ -180,87 +179,99 @@ async function startServer() {
         { name: "eTranzact", email: "hr@etranzact.com", industry_type: "Payment Systems", required_skills: "[\"Java\", \"Oracle\", \"Linux\", \"Cybersecurity\", \"Networking\"]", address: "Victoria Island, Lagos", latitude: 6.4312, longitude: 3.4300, allowed_radius: 400 },
         { name: "Seamfix", email: "careers@seamfix.com", industry_type: "Software Development", required_skills: "[\"Java\", \"React\", \"Android\", \"Data Analysis\", \"Biometrics\"]", address: "Lekki, Lagos", latitude: 6.4428, longitude: 3.4735, allowed_radius: 500 }
       ];
-      db.prepare("UPDATE student_profiles SET assigned_company_id = NULL").run();
-      db.prepare("DELETE FROM applications").run();
-      db.prepare("DELETE FROM logbook_entries").run();
-      db.prepare("DELETE FROM companies").run();
-      const insert = db.prepare("INSERT INTO companies (name, email, industry_type, required_skills, address, latitude, longitude, allowed_radius) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-      const transaction = db.transaction(() => {
+
+      await db.transaction(async () => {
+        await db.run("UPDATE student_profiles SET assigned_company_id = NULL");
+        await db.run("DELETE FROM applications");
+        await db.run("DELETE FROM logbook_entries");
+        await db.run("DELETE FROM companies");
         for (const comp of companies) {
-          insert.run(comp.name, comp.email, comp.industry_type, comp.required_skills, comp.address, comp.latitude, comp.longitude, comp.allowed_radius);
+          await db.run(
+            "INSERT INTO companies (name, email, industry_type, required_skills, address, latitude, longitude, allowed_radius) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            comp.name, comp.email, comp.industry_type, comp.required_skills, comp.address, comp.latitude, comp.longitude, comp.allowed_radius
+          );
         }
       });
-      transaction();
+
       res.json({ success: true, count: companies.length });
     } catch (e: any) {
       res.status(500).json({ error: e.message });
     }
   });
 
-  app.post("/api/auth/login", (req, res) => {
+  app.post("/api/auth/login", async (req, res) => {
     const { email, password } = req.body;
-    const user: any = db.prepare("SELECT * FROM users WHERE email = ?").get(email);
-    if (!user || !bcrypt.compareSync(password, user.password)) {
-      return res.status(401).json({ error: "Invalid credentials" });
+    try {
+      const user: any = await db.get("SELECT * FROM users WHERE email = ?", email);
+      if (!user || !bcrypt.compareSync(password, user.password)) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+      const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+      res.json({ token, user: { id: user.id, email: user.email, fullName: user.full_name, role: user.role } });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
     }
-    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id: user.id, email: user.email, fullName: user.full_name, role: user.role } });
   });
 
   // --- FORGOT PASSWORD ---
   app.post("/api/auth/forgot-password", async (req, res) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ error: "Email is required" });
-    const user: any = db.prepare("SELECT * FROM users WHERE email = ?").get(email);
-    if (!user) {
-      // Don't reveal if email exists — security best practice
-      return res.json({ message: "If that email exists, a reset link has been sent." });
-    }
-    const { randomBytes } = await import("crypto");
-    const token = randomBytes(32).toString("hex");
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
-    db.prepare("INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)").run(user.id, token, expiresAt);
-    const resetLink = `${process.env.APP_URL || "http://localhost:3001"}?reset_token=${token}`;
     try {
-      await transporter.sendMail({
-        from: `"SIWES Portal" <${process.env.EMAIL_USER}>`,
-        to: email,
-        subject: "Reset Your SIWES Password",
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto;">
-            <h2 style="color: #5A5A40;">Password Reset Request</h2>
-            <p>Hi ${user.full_name},</p>
-            <p>You requested a password reset. Click the button below to set a new password. This link expires in <strong>1 hour</strong>.</p>
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${resetLink}" style="background: #5A5A40; color: white; padding: 14px 28px; border-radius: 50px; text-decoration: none; font-weight: bold;">Reset Password</a>
+      const user: any = await db.get("SELECT * FROM users WHERE email = ?", email);
+      if (!user) {
+        // Don't reveal if email exists — security best practice
+        return res.json({ message: "If that email exists, a reset link has been sent." });
+      }
+      const { randomBytes } = await import("crypto");
+      const token = randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
+      await db.run("INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)", user.id, token, expiresAt);
+      const resetLink = `${process.env.APP_URL || "http://localhost:3001"}?reset_token=${token}`;
+      try {
+        await transporter.sendMail({
+          from: `"SIWES Portal" <${process.env.EMAIL_USER}>`,
+          to: email,
+          subject: "Reset Your SIWES Password",
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto;">
+              <h2 style="color: #5A5A40;">Password Reset Request</h2>
+              <p>Hi ${user.full_name},</p>
+              <p>You requested a password reset. Click the button below to set a new password. This link expires in <strong>1 hour</strong>.</p>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${resetLink}" style="background: #5A5A40; color: white; padding: 14px 28px; border-radius: 50px; text-decoration: none; font-weight: bold;">Reset Password</a>
+              </div>
+              <p style="color: #888; font-size: 12px;">If you didn't request this, you can safely ignore this email.</p>
             </div>
-            <p style="color: #888; font-size: 12px;">If you didn't request this, you can safely ignore this email.</p>
-          </div>
-        `
-      });
-    } catch (e) {
-      console.error("Email send error:", e);
+          `
+        });
+      } catch (e) {
+        console.error("Email send error:", e);
+      }
+      res.json({ message: "If that email exists, a reset link has been sent." });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
     }
-    res.json({ message: "If that email exists, a reset link has been sent." });
   });
 
   app.post("/api/auth/reset-password", async (req, res) => {
     const { token, password } = req.body;
     if (!token || !password) return res.status(400).json({ error: "Token and password are required" });
     if (password.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
-    const record: any = db.prepare(
-      "SELECT * FROM password_reset_tokens WHERE token = ? AND used = 0 AND expires_at > datetime('now')"
-    ).get(token);
-    if (!record) return res.status(400).json({ error: "Invalid or expired reset link. Please request a new one." });
-    const hashed = bcrypt.hashSync(password, 10);
-    db.prepare("UPDATE users SET password = ? WHERE id = ?").run(hashed, record.user_id);
-    db.prepare("UPDATE password_reset_tokens SET used = 1 WHERE id = ?").run(record.id);
-    res.json({ message: "Password updated successfully. You can now log in." });
+    try {
+      const record: any = await db.get(
+        "SELECT * FROM password_reset_tokens WHERE token = ? AND used = 0 AND expires_at > datetime('now')",
+        token
+      );
+      if (!record) return res.status(400).json({ error: "Invalid or expired reset link. Please request a new one." });
+      const hashed = bcrypt.hashSync(password, 10);
+      await db.run("UPDATE users SET password = ? WHERE id = ?", hashed, record.user_id);
+      await db.run("UPDATE password_reset_tokens SET used = 1 WHERE id = ?", record.id);
+      res.json({ message: "Password updated successfully. You can now log in." });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
-
-
-  // NOTE: /api/notifications routes are registered after authenticate is defined below
-
 
   const ROLE_PERMISSIONS: Record<string, string[]> = {
     STUDENT: ["SUBMIT_LOGS", "VIEW_RECOMMENDATIONS", "MANAGE_PROFILE"],
@@ -292,31 +303,45 @@ async function startServer() {
   };
 
   // --- NOTIFICATIONS ---
-  app.get("/api/notifications", authenticate, (req: any, res) => {
-    const notifications = db.prepare(
-      "SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 20"
-    ).all(req.user.id);
-    const unreadCount = (db.prepare("SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0").get(req.user.id) as any).count;
-    res.json({ notifications, unreadCount });
+  app.get("/api/notifications", authenticate, async (req: any, res) => {
+    try {
+      const notifications = await db.all(
+        "SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 20",
+        req.user.id
+      );
+      const unreadRow = await db.get("SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0", req.user.id);
+      const unreadCount = unreadRow ? parseInt(unreadRow.count) : 0;
+      res.json({ notifications, unreadCount });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
-  app.put("/api/notifications/read", authenticate, (req: any, res) => {
-    db.prepare("UPDATE notifications SET is_read = 1 WHERE user_id = ?").run(req.user.id);
-    res.json({ success: true });
+  app.put("/api/notifications/read", authenticate, async (req: any, res) => {
+    try {
+      await db.run("UPDATE notifications SET is_read = 1 WHERE user_id = ?", req.user.id);
+      res.json({ success: true });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
   // --- STUDENT ROUTES ---
-  app.get("/api/student/profile", authenticate, (req: any, res) => {
-    const profile = db.prepare(`
-      SELECT sp.*, c.latitude as assigned_company_latitude, c.longitude as assigned_company_longitude 
-      FROM student_profiles sp
-      LEFT JOIN companies c ON sp.assigned_company_id = c.id
-      WHERE sp.user_id = ?
-    `).get(req.user.id) as any;
-    res.json(profile || {});
+  app.get("/api/student/profile", authenticate, async (req: any, res) => {
+    try {
+      const profile = await db.get(`
+        SELECT sp.*, c.latitude as assigned_company_latitude, c.longitude as assigned_company_longitude 
+        FROM student_profiles sp
+        LEFT JOIN companies c ON sp.assigned_company_id = c.id
+        WHERE sp.user_id = ?
+      `, req.user.id);
+      res.json(profile || {});
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
-  app.put("/api/student/profile", authenticate, (req: any, res) => {
+  app.put("/api/student/profile", authenticate, async (req: any, res) => {
     try {
       const { course, department, skills, location_preference, latitude, longitude, cgpa, cv_url, mat_number } = req.body;
       
@@ -331,16 +356,16 @@ async function startServer() {
       }
 
       // Check uniqueness: is there any OTHER user with this mat_number?
-      const existing: any = db.prepare(`
+      const existing: any = await db.get(`
         SELECT user_id FROM student_profiles 
         WHERE mat_number = ? AND user_id != ?
-      `).get(formattedMatNumber, req.user.id);
+      `, formattedMatNumber, req.user.id);
 
       if (existing) {
         return res.status(400).json({ error: `Matriculation number ${formattedMatNumber} is already in use by another student.` });
       }
 
-      db.prepare(`
+      await db.run(`
         INSERT INTO student_profiles (user_id, course, department, skills, location_preference, latitude, longitude, cgpa, cv_url, mat_number)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(user_id) DO UPDATE SET
@@ -353,7 +378,7 @@ async function startServer() {
           cgpa = excluded.cgpa,
           cv_url = excluded.cv_url,
           mat_number = excluded.mat_number
-      `).run(req.user.id, course || '', department || '', JSON.stringify(skills || []), location_preference || '', 
+      `, req.user.id, course || '', department || '', JSON.stringify(skills || []), location_preference || '', 
         latitude || null, longitude || null, cgpa || null, cv_url || null, formattedMatNumber);
       
       res.json({ success: true });
@@ -365,105 +390,113 @@ async function startServer() {
 
   // --- RECOMMENDATIONS ---
   app.get("/api/student/recommendations", authenticate, async (req: any, res) => {
-    const student: any = db.prepare("SELECT * FROM student_profiles WHERE user_id = ?").get(req.user.id);
-    const companies: any = db.prepare("SELECT * FROM companies").all();
+    try {
+      const student: any = await db.get("SELECT * FROM student_profiles WHERE user_id = ?", req.user.id);
+      const companies: any = await db.all("SELECT * FROM companies");
 
-    if (!student) {
-      return res.json([]);
-    }
+      if (!student) {
+        return res.json([]);
+      }
 
-    // Parse JSON fields
-    const studentData = {
-      ...student,
-      skills: JSON.parse(student.skills || "[]")
-    };
+      // Parse JSON fields
+      const studentData = {
+        ...student,
+        skills: JSON.parse(student.skills || "[]")
+      };
 
-    const companiesData = companies.map((c: any) => ({
-      ...c,
-      required_skills: JSON.parse(c.required_skills || "[]")
-    }));
+      const companiesData = companies.map((c: any) => ({
+        ...c,
+        required_skills: JSON.parse(c.required_skills || "[]")
+      }));
 
-    // Helper: run python async with timeout (non-blocking)
-    const runPythonAsync = (cmd: string, input: string, timeoutMs: number): Promise<any[] | null> => {
-      return new Promise((resolve) => {
-        let settled = false;
-        const done = (result: any[] | null) => { if (!settled) { settled = true; resolve(result); } };
+      // Helper: run python async with timeout (non-blocking)
+      const runPythonAsync = (cmd: string, input: string, timeoutMs: number): Promise<any[] | null> => {
+        return new Promise((resolve) => {
+          let settled = false;
+          const done = (result: any[] | null) => { if (!settled) { settled = true; resolve(result); } };
 
-        const timer = setTimeout(() => done(null), timeoutMs);
-        try {
-          const proc = spawn(cmd, ["ai_engine.py", input], { timeout: timeoutMs });
-          let stdout = '';
-          proc.stdout?.on('data', (d: Buffer) => { stdout += d.toString(); });
-          proc.on('close', (code: number) => {
-            clearTimeout(timer);
-            if (code === 0 && stdout) {
-              try {
-                const parsed = JSON.parse(stdout.trim());
-                done(Array.isArray(parsed) ? parsed : null);
-              } catch { done(null); }
-            } else { done(null); }
-          });
-          proc.on('error', () => { clearTimeout(timer); done(null); });
-        } catch { done(null); }
+          const timer = setTimeout(() => done(null), timeoutMs);
+          try {
+            const proc = spawn(cmd, ["ai_engine.py", input], { timeout: timeoutMs });
+            let stdout = '';
+            proc.stdout?.on('data', (d: Buffer) => { stdout += d.toString(); });
+            proc.on('close', (code: number) => {
+              clearTimeout(timer);
+              if (code === 0 && stdout) {
+                try {
+                  const parsed = JSON.parse(stdout.trim());
+                  done(Array.isArray(parsed) ? parsed : null);
+                } catch { done(null); }
+              } else { done(null); }
+            });
+            proc.on('error', () => { clearTimeout(timer); done(null); });
+          } catch { done(null); }
+        });
+      };
+
+      // Try Python AI Engine (async, non-blocking) with 6s timeout
+      const input = JSON.stringify({ student: studentData, companies: companiesData });
+      let pythonResult: any[] | null = null;
+      for (const cmd of ["python", "python3"]) {
+        pythonResult = await runPythonAsync(cmd, input, 6000);
+        if (pythonResult) break;
+      }
+
+      if (pythonResult) {
+        return res.json(pythonResult);
+      }
+
+      // Fallback: built-in JS scoring engine
+      console.log("Python AI engine unavailable — using built-in JS scoring");
+      const results = companiesData.map((company: any) => {
+        const score = calculateScore(studentData, company);
+        return { ...company, total: score.total, reason: score.reason, breakdown: score.breakdown };
       });
-    };
-
-    // Try Python AI Engine (async, non-blocking) with 6s timeout
-    const input = JSON.stringify({ student: studentData, companies: companiesData });
-    let pythonResult: any[] | null = null;
-    for (const cmd of ["python", "python3"]) {
-      pythonResult = await runPythonAsync(cmd, input, 6000);
-      if (pythonResult) break;
+      results.sort((a: any, b: any) => b.total - a.total);
+      res.json(results);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
     }
-
-    if (pythonResult) {
-      return res.json(pythonResult);
-    }
-
-    // Fallback: built-in JS scoring engine
-    console.log("Python AI engine unavailable — using built-in JS scoring");
-    const results = companiesData.map((company: any) => {
-      const score = calculateScore(studentData, company);
-      return { ...company, total: score.total, reason: score.reason, breakdown: score.breakdown };
-    });
-    results.sort((a: any, b: any) => b.total - a.total);
-    res.json(results);
   });
 
   // --- AI CAREER ADVICE ---
-  app.get("/api/student/career-advice", authenticate, (req: any, res) => {
-    const student: any = db.prepare("SELECT * FROM student_profiles WHERE user_id = ?").get(req.user.id);
-    if (!student) {
-      return res.json({ advice: "Please complete your profile to get personalized AI career advice." });
-    }
+  app.get("/api/student/career-advice", authenticate, async (req: any, res) => {
+    try {
+      const student: any = await db.get("SELECT * FROM student_profiles WHERE user_id = ?", req.user.id);
+      if (!student) {
+        return res.json({ advice: "Please complete your profile to get personalized AI career advice." });
+      }
 
-    const skillsStr = (student.skills || "").toLowerCase();
-    const courseStr = (student.course || "").toLowerCase();
-    
-    const isTechnical = skillsStr.includes('python') || skillsStr.includes('react') || skillsStr.includes('sql') || skillsStr.includes('java') || courseStr.includes('computer') || courseStr.includes('engineering') || courseStr.includes('science');
-    
-    let advice = "";
-    
-    if (isTechnical) {
-      advice = `Based on your technical profile in **${student.course || 'your field'}**, you have two great paths:\n\n• **Large Industrial Companies**: Great for structure, learning enterprise-scale systems, and solidifying your foundational skills.\n• **Small Companies / Startups**: Fit your potential if you want hands-on experience across multiple domains, where you can learn a lot very quickly by taking on diverse responsibilities.\n\n**AI Recommendation**: A mid-sized to small firm might give you the best rapid learning curve for your specific technical skill set!`;
-    } else {
-      advice = `Looking at your background in **${student.course || 'your field'}**, here is your AI breakdown:\n\n• **Large Industrials / Corporations**: These will offer you excellent structured training programs and a clear understanding of corporate workflows.\n• **Small Companies**: These fit your potential if you are proactive and want to learn a lot by doing. You'll wear many hats and gain practical experience fast.\n\n**AI Recommendation**: Starting in a structured industrial environment might be more comfortable to build your initial confidence.`;
-    }
+      const skillsStr = (student.skills || "").toLowerCase();
+      const courseStr = (student.course || "").toLowerCase();
+      
+      const isTechnical = skillsStr.includes('python') || skillsStr.includes('react') || skillsStr.includes('sql') || skillsStr.includes('java') || courseStr.includes('computer') || courseStr.includes('engineering') || courseStr.includes('science');
+      
+      let advice = "";
+      
+      if (isTechnical) {
+        advice = `Based on your technical profile in **${student.course || 'your field'}**, you have two great paths:\n\n• **Large Industrial Companies**: Great for structure, learning enterprise-scale systems, and solidifying your foundational skills.\n• **Small Companies / Startups**: Fit your potential if you want hands-on experience across multiple domains, where you can learn a lot very quickly by taking on diverse responsibilities.\n\n**AI Recommendation**: A mid-sized to small firm might give you the best rapid learning curve for your specific technical skill set!`;
+      } else {
+        advice = `Looking at your background in **${student.course || 'your field'}**, here is your AI breakdown:\n\n• **Large Industrials / Corporations**: These will offer you excellent structured training programs and a clear understanding of corporate workflows.\n• **Small Companies**: These fit your potential if you are proactive and want to learn a lot by doing. You'll wear many hats and gain practical experience fast.\n\n**AI Recommendation**: Starting in a structured industrial environment might be more comfortable to build your initial confidence.`;
+      }
 
-    res.json({ advice });
+      res.json({ advice });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
   // --- APPLICATIONS ---
-  app.post("/api/student/apply", authenticate, (req: any, res) => {
+  app.post("/api/student/apply", authenticate, async (req: any, res) => {
     const { company_id, score, score_breakdown, custom_company } = req.body;
     try {
       let finalCompanyId = company_id;
 
       if (custom_company) {
-        const result = db.prepare(`
+        const result = await db.run(`
           INSERT INTO companies (name, email, industry_type, address, latitude, longitude, required_skills)
           VALUES (?, ?, ?, ?, ?, ?, ?)
-        `).run(custom_company.name, custom_company.email || '', custom_company.industry_type, custom_company.address || '',
+        `, custom_company.name, custom_company.email || '', custom_company.industry_type, custom_company.address || '',
           custom_company.latitude || 0, custom_company.longitude || 0, '[]');
         finalCompanyId = result.lastInsertRowid;
       }
@@ -473,15 +506,15 @@ async function startServer() {
       }
 
       // Check if already applied
-      const existing = db.prepare("SELECT * FROM applications WHERE student_id = ? AND company_id = ?").get(req.user.id, finalCompanyId);
+      const existing = await db.get("SELECT * FROM applications WHERE student_id = ? AND company_id = ?", req.user.id, finalCompanyId);
       if (existing) {
         return res.status(400).json({ error: "You have already applied to this company" });
       }
 
-      db.prepare(`
+      await db.run(`
         INSERT INTO applications (student_id, company_id, score, score_breakdown)
         VALUES (?, ?, ?, ?)
-      `).run(req.user.id, finalCompanyId, score || 0, JSON.stringify(score_breakdown || {}));
+      `, req.user.id, finalCompanyId, score || 0, JSON.stringify(score_breakdown || {}));
 
       res.json({ success: true });
     } catch (e: any) {
@@ -489,25 +522,29 @@ async function startServer() {
     }
   });
 
-  app.get("/api/student/applications", authenticate, (req: any, res) => {
-    const apps = db.prepare(`
-      SELECT a.*, c.name as company_name, c.industry_type, c.email as company_email, c.address as company_address
-      FROM applications a
-      JOIN companies c ON a.company_id = c.id
-      WHERE a.student_id = ?
-      ORDER BY a.created_at DESC
-    `).all(req.user.id);
-    res.json(apps);
+  app.get("/api/student/applications", authenticate, async (req: any, res) => {
+    try {
+      const apps = await db.all(`
+        SELECT a.*, c.name as company_name, c.industry_type, c.email as company_email, c.address as company_address
+        FROM applications a
+        JOIN companies c ON a.company_id = c.id
+        WHERE a.student_id = ?
+        ORDER BY a.created_at DESC
+      `, req.user.id);
+      res.json(apps);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
-  app.post("/api/student/applications/:id/acceptance", authenticate, (req: any, res) => {
+  app.post("/api/student/applications/:id/acceptance", authenticate, async (req: any, res) => {
     const { acceptance_letter_url } = req.body;
     try {
-      db.prepare(`
+      await db.run(`
         UPDATE applications 
         SET acceptance_letter_url = ?, status = 'ACCEPTED_BY_COMPANY'
         WHERE id = ? AND student_id = ?
-      `).run(acceptance_letter_url, req.params.id, req.user.id);
+      `, acceptance_letter_url, req.params.id, req.user.id);
       res.json({ success: true });
     } catch (e: any) {
       res.status(400).json({ error: e.message });
@@ -523,22 +560,22 @@ async function startServer() {
     res.json({ url: fileUrl });
   });
 
-  app.post("/api/student/register-workplace", authenticate, (req: any, res) => {
+  app.post("/api/student/register-workplace", authenticate, async (req: any, res) => {
     const { latitude, longitude } = req.body;
     const userId = req.user.id;
     try {
-      const profile = db.prepare("SELECT * FROM student_profiles WHERE user_id = ?").get(userId);
+      const profile = await db.get("SELECT * FROM student_profiles WHERE user_id = ?", userId);
       if (!profile) {
-        db.prepare(`
+        await db.run(`
           INSERT INTO student_profiles (user_id, course, department, internship_latitude, internship_longitude) 
           VALUES (?, 'General', 'Technology', ?, ?)
-        `).run(userId, latitude, longitude);
+        `, userId, latitude, longitude);
       } else {
-        db.prepare(`
+        await db.run(`
           UPDATE student_profiles 
           SET internship_latitude = ?, internship_longitude = ? 
           WHERE user_id = ?
-        `).run(latitude, longitude, userId);
+        `, latitude, longitude, userId);
       }
       res.json({ success: true, message: "Workplace registered" });
     } catch (e: any) {
@@ -546,394 +583,467 @@ async function startServer() {
     }
   });
 
-  app.get("/api/student/location-requests", authenticate, (req: any, res) => {
-    const reqs = db.prepare("SELECT * FROM location_change_requests WHERE student_id = ? ORDER BY created_at DESC").all(req.user.id);
-    res.json(reqs);
+  app.get("/api/student/location-requests", authenticate, async (req: any, res) => {
+    try {
+      const reqs = await db.all("SELECT * FROM location_change_requests WHERE student_id = ? ORDER BY created_at DESC", req.user.id);
+      res.json(reqs);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
-  app.post("/api/student/location-request", authenticate, (req: any, res) => {
+  app.post("/api/student/location-request", authenticate, async (req: any, res) => {
     const { reason } = req.body;
     const userId = req.user.id;
     try {
       // Check if already pending
-      const existing = db.prepare("SELECT * FROM location_change_requests WHERE student_id = ? AND status = 'PENDING'").get(userId);
+      const existing = await db.get("SELECT * FROM location_change_requests WHERE student_id = ? AND status = 'PENDING'", userId);
       if (existing) {
         return res.status(400).json({ error: "You already have a pending location change request." });
       }
-      db.prepare("INSERT INTO location_change_requests (student_id, reason) VALUES (?, ?)").run(userId, reason);
+      await db.run("INSERT INTO location_change_requests (student_id, reason) VALUES (?, ?)", userId, reason);
       res.json({ success: true });
     } catch (e: any) {
       res.status(500).json({ error: e.message });
     }
   });
 
-
-
-
-  app.post("/api/logbook", authenticate, (req: any, res) => {
+  app.post("/api/logbook", authenticate, async (req: any, res) => {
     const { activity_description, latitude, longitude, accuracy, date, attachment_url } = req.body;
-    const student: any = db.prepare("SELECT * FROM student_profiles WHERE user_id = ?").get(req.user.id);
+    try {
+      const student: any = await db.get("SELECT * FROM student_profiles WHERE user_id = ?", req.user.id);
 
-    if (!student.assigned_company_id) {
-      return res.status(400).json({ error: "No company assigned" });
-    }
-
-    const company: any = db.prepare("SELECT * FROM companies WHERE id = ?").get(student.assigned_company_id);
-    
-    // Prioritize registered internship workplace coordinates, fallback to company address
-    const targetLat = student.internship_latitude !== null ? student.internship_latitude : company.latitude;
-    const targetLon = student.internship_longitude !== null ? student.internship_longitude : company.longitude;
-    
-    const distance = getDistance(latitude, longitude, targetLat, targetLon);
-    const accuracyAdjustment = Math.min(accuracy || 0, 500); // Allow up to 500m fallback error tolerance
-    const status = (distance - accuracyAdjustment) <= company.allowed_radius ? 'VERIFIED' : 'FLAGGED';
-
-    db.prepare(`
-      INSERT INTO logbook_entries (student_id, company_id, date, activity_description, latitude, longitude, verification_status, distance_from_company, attachment_url)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(req.user.id, student.assigned_company_id, date, activity_description, latitude, longitude, status, distance, attachment_url || null);
-
-
-    // Notify supervisor in-app
-    if (student.school_supervisor_id) {
-      const studentUser: any = db.prepare("SELECT full_name FROM users WHERE id = ?").get(req.user.id);
-      db.prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)").run(
-        student.school_supervisor_id,
-        `📋 ${studentUser?.full_name} submitted a new logbook entry for ${date}.`
-      );
-
-      // Also send email to supervisor
-      const sup: any = db.prepare("SELECT email FROM users WHERE id = ?").get(student.school_supervisor_id);
-      if (sup) {
-        transporter.sendMail({
-          from: `"SIWES Portal" <${process.env.EMAIL_USER}>`,
-          to: sup.email,
-          subject: `New Logbook Entry from ${studentUser?.full_name}`,
-          html: `<p>Hi,<br><strong>${studentUser?.full_name}</strong> submitted a new logbook entry for <strong>${date}</strong>.<br>Activity: ${activity_description}<br>GPS Status: <strong>${status}</strong></p>`
-        }).catch(() => {});
+      if (!student.assigned_company_id) {
+        return res.status(400).json({ error: "No company assigned" });
       }
-    }
 
-    res.json({ success: true, status, distance });
+      const company: any = await db.get("SELECT * FROM companies WHERE id = ?", student.assigned_company_id);
+      
+      // Prioritize registered internship workplace coordinates, fallback to company address
+      const targetLat = student.internship_latitude !== null ? student.internship_latitude : company.latitude;
+      const targetLon = student.internship_longitude !== null ? student.internship_longitude : company.longitude;
+      
+      const distance = getDistance(latitude, longitude, targetLat, targetLon);
+      const accuracyAdjustment = Math.min(accuracy || 0, 500); // Allow up to 500m fallback error tolerance
+      const status = (distance - accuracyAdjustment) <= company.allowed_radius ? 'VERIFIED' : 'FLAGGED';
+
+      await db.run(`
+        INSERT INTO logbook_entries (student_id, company_id, date, activity_description, latitude, longitude, verification_status, distance_from_company, attachment_url)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, req.user.id, student.assigned_company_id, date, activity_description, latitude, longitude, status, distance, attachment_url || null);
+
+      // Notify supervisor in-app
+      if (student.school_supervisor_id) {
+        const studentUser: any = await db.get("SELECT full_name FROM users WHERE id = ?", req.user.id);
+        await db.run("INSERT INTO notifications (user_id, message) VALUES (?, ?)",
+          student.school_supervisor_id,
+          `📋 ${studentUser?.full_name} submitted a new logbook entry for ${date}.`
+        );
+
+        // Also send email to supervisor
+        const sup: any = await db.get("SELECT email FROM users WHERE id = ?", student.school_supervisor_id);
+        if (sup) {
+          transporter.sendMail({
+            from: `"SIWES Portal" <${process.env.EMAIL_USER}>`,
+            to: sup.email,
+            subject: `New Logbook Entry from ${studentUser?.full_name}`,
+            html: `<p>Hi,<br><strong>${studentUser?.full_name}</strong> submitted a new logbook entry for <strong>${date}</strong>.<br>Activity: ${activity_description}<br>GPS Status: <strong>${status}</strong></p>`
+          }).catch(() => {});
+        }
+      }
+
+      res.json({ success: true, status, distance });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
-  app.get("/api/logbook", authenticate, (req: any, res) => {
-    const entries = db.prepare("SELECT * FROM logbook_entries WHERE student_id = ? ORDER BY date DESC").all(req.user.id);
-    res.json(entries);
+  app.get("/api/logbook", authenticate, async (req: any, res) => {
+    try {
+      const entries = await db.all("SELECT * FROM logbook_entries WHERE student_id = ? ORDER BY date DESC", req.user.id);
+      res.json(entries);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
   // --- ADMIN / SUPERVISOR ROUTES ---
-  app.get("/api/admin/analytics", authenticate, authorize("VIEW_ALL_STUDENTS"), (req: any, res) => {
-    const totalStudents = db.prepare("SELECT COUNT(*) as count FROM users WHERE role = 'STUDENT'").get() as any;
-    const totalPlacements = db.prepare("SELECT COUNT(*) as count FROM student_profiles WHERE assigned_company_id IS NOT NULL").get() as any;
-    const verifiedLogs = db.prepare("SELECT COUNT(*) as count FROM logbook_entries WHERE verification_status = 'VERIFIED'").get() as any;
-    const flaggedLogs = db.prepare("SELECT COUNT(*) as count FROM logbook_entries WHERE verification_status = 'FLAGGED'").get() as any;
-    const pendingLogs = db.prepare("SELECT COUNT(*) as count FROM logbook_entries WHERE verification_status = 'PENDING'").get() as any;
-    const activeSupervisors = db.prepare("SELECT COUNT(*) as count FROM users WHERE role = 'SCHOOL_SUPERVISOR'").get() as any;
-    const totalCompanies = db.prepare("SELECT COUNT(*) as count FROM companies").get() as any;
-    const pendingApplications = db.prepare("SELECT COUNT(*) as count FROM applications WHERE status = 'PENDING'").get() as any;
-    const totalLogs = db.prepare("SELECT COUNT(*) as count FROM logbook_entries").get() as any;
-    const unplacedStudents = db.prepare(`
-      SELECT COUNT(*) as count FROM users u
-      LEFT JOIN student_profiles sp ON u.id = sp.user_id
-      WHERE u.role = 'STUDENT' AND (sp.assigned_company_id IS NULL OR sp.id IS NULL)
-    `).get() as any;
+  app.get("/api/admin/analytics", authenticate, authorize("VIEW_ALL_STUDENTS"), async (req: any, res) => {
+    try {
+      const totalStudents = await db.get("SELECT COUNT(*) as count FROM users WHERE role = 'STUDENT'");
+      const totalPlacements = await db.get("SELECT COUNT(*) as count FROM student_profiles WHERE assigned_company_id IS NOT NULL");
+      const verifiedLogs = await db.get("SELECT COUNT(*) as count FROM logbook_entries WHERE verification_status = 'VERIFIED'");
+      const flaggedLogs = await db.get("SELECT COUNT(*) as count FROM logbook_entries WHERE verification_status = 'FLAGGED'");
+      const pendingLogs = await db.get("SELECT COUNT(*) as count FROM logbook_entries WHERE verification_status = 'PENDING'");
+      const activeSupervisors = await db.get("SELECT COUNT(*) as count FROM users WHERE role = 'SCHOOL_SUPERVISOR'");
+      const totalCompanies = await db.get("SELECT COUNT(*) as count FROM companies");
+      const pendingApplications = await db.get("SELECT COUNT(*) as count FROM applications WHERE status = 'PENDING'");
+      const totalLogs = await db.get("SELECT COUNT(*) as count FROM logbook_entries");
+      const unplacedStudents = await db.get(`
+        SELECT COUNT(*) as count FROM users u
+        LEFT JOIN student_profiles sp ON u.id = sp.user_id
+        WHERE u.role = 'STUDENT' AND (sp.assigned_company_id IS NULL OR sp.id IS NULL)
+      `);
 
-    // Recent activity feed (last 8 events)
-    const recentActivity = db.prepare(`
-      SELECT type, actor, event_date, detail, ts FROM (
-        SELECT 'logbook' as type, u.full_name as actor, le.date as event_date,
-               le.verification_status as detail, le.created_at as ts
-        FROM logbook_entries le JOIN users u ON le.student_id = u.id
-        UNION ALL
-        SELECT 'application' as type, u.full_name as actor, a.created_at as event_date,
-               a.status as detail, a.created_at as ts
-        FROM applications a JOIN users u ON a.student_id = u.id
-      ) ORDER BY ts DESC LIMIT 8
-    `).all().map((row: any) => ({ ...row, created_at: row.ts }));
+      // Recent activity feed (last 8 events)
+      const recentActivity = (await db.all(`
+        SELECT type, actor, event_date, detail, ts FROM (
+          SELECT 'logbook' as type, u.full_name as actor, le.date as event_date,
+                 le.verification_status as detail, le.created_at as ts
+          FROM logbook_entries le JOIN users u ON le.student_id = u.id
+          UNION ALL
+          SELECT 'application' as type, u.full_name as actor, a.created_at as event_date,
+                 a.status as detail, a.created_at as ts
+          FROM applications a JOIN users u ON a.student_id = u.id
+        ) q ORDER BY ts DESC LIMIT 8
+      `)).map((row: any) => ({ ...row, created_at: row.ts }));
 
-    // Department breakdown — TRIM whitespace so duplicates like "software engineering " merge
-    const deptBreakdown = db.prepare(`
-      SELECT TRIM(sp.department) as department, COUNT(*) as count
-      FROM student_profiles sp
-      WHERE sp.department IS NOT NULL AND TRIM(sp.department) != ''
-      GROUP BY TRIM(sp.department) ORDER BY count DESC LIMIT 6
-    `).all();
+      // Department breakdown — TRIM whitespace so duplicates like "software engineering " merge
+      const deptBreakdown = await db.all(`
+        SELECT TRIM(sp.department) as department, COUNT(*) as count
+        FROM student_profiles sp
+        WHERE sp.department IS NOT NULL AND TRIM(sp.department) != ''
+        GROUP BY TRIM(sp.department) ORDER BY count DESC LIMIT 6
+      `);
 
-
-    res.json({
-      totalStudents: totalStudents.count,
-      totalPlacements: totalPlacements.count,
-      unplacedStudents: unplacedStudents.count,
-      verifiedLogs: verifiedLogs.count,
-      flaggedLogs: flaggedLogs.count,
-      pendingLogs: pendingLogs.count,
-      totalLogs: totalLogs.count,
-      activeSupervisors: activeSupervisors.count,
-      totalCompanies: totalCompanies.count,
-      pendingApplications: pendingApplications.count,
-      recentActivity,
-      deptBreakdown,
-    });
+      res.json({
+        totalStudents: totalStudents ? parseInt(totalStudents.count) : 0,
+        totalPlacements: totalPlacements ? parseInt(totalPlacements.count) : 0,
+        unplacedStudents: unplacedStudents ? parseInt(unplacedStudents.count) : 0,
+        verifiedLogs: verifiedLogs ? parseInt(verifiedLogs.count) : 0,
+        flaggedLogs: flaggedLogs ? parseInt(flaggedLogs.count) : 0,
+        pendingLogs: pendingLogs ? parseInt(pendingLogs.count) : 0,
+        totalLogs: totalLogs ? parseInt(totalLogs.count) : 0,
+        activeSupervisors: activeSupervisors ? parseInt(activeSupervisors.count) : 0,
+        totalCompanies: totalCompanies ? parseInt(totalCompanies.count) : 0,
+        pendingApplications: pendingApplications ? parseInt(pendingApplications.count) : 0,
+        recentActivity,
+        deptBreakdown,
+      });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
-
-  app.get("/api/admin/applications", authenticate, authorize("VIEW_ALL_STUDENTS"), (req: any, res) => {
-    const apps = db.prepare(`
-      SELECT a.*, u.full_name, c.name as company_name 
-      FROM applications a
-      JOIN users u ON a.student_id = u.id
-      JOIN companies c ON a.company_id = c.id
-      ORDER BY a.created_at DESC
-    `).all();
-    res.json(apps);
+  app.get("/api/admin/applications", authenticate, authorize("VIEW_ALL_STUDENTS"), async (req: any, res) => {
+    try {
+      const apps = await db.all(`
+        SELECT a.*, u.full_name, c.name as company_name 
+        FROM applications a
+        JOIN users u ON a.student_id = u.id
+        JOIN companies c ON a.company_id = c.id
+        ORDER BY a.created_at DESC
+      `);
+      res.json(apps);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
-  app.get("/api/admin/location-requests", authenticate, authorize("MANAGE_USERS"), (req: any, res) => {
-    const requests = db.prepare(`
-      SELECT l.*, u.full_name, u.email
-      FROM location_change_requests l
-      JOIN users u ON l.student_id = u.id
-      ORDER BY l.created_at DESC
-    `).all();
-    res.json(requests);
+  app.get("/api/admin/location-requests", authenticate, authorize("MANAGE_USERS"), async (req: any, res) => {
+    try {
+      const requests = await db.all(`
+        SELECT l.*, u.full_name, u.email
+        FROM location_change_requests l
+        JOIN users u ON l.student_id = u.id
+        ORDER BY l.created_at DESC
+      `);
+      res.json(requests);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
-  app.put("/api/admin/location-requests/:id/status", authenticate, authorize("MANAGE_USERS"), (req: any, res) => {
+  app.put("/api/admin/location-requests/:id/status", authenticate, authorize("MANAGE_USERS"), async (req: any, res) => {
     const { status } = req.body;
     try {
-      db.transaction(() => {
-        db.prepare("UPDATE location_change_requests SET status = ? WHERE id = ?").run(status, req.params.id);
+      await db.transaction(async () => {
+        await db.run("UPDATE location_change_requests SET status = ? WHERE id = ?", status, req.params.id);
 
         if (status === 'APPROVED') {
-          const reqDoc = db.prepare("SELECT student_id FROM location_change_requests WHERE id = ?").get(req.params.id) as any;
+          const reqDoc = await db.get("SELECT student_id FROM location_change_requests WHERE id = ?", req.params.id);
           if (reqDoc) {
-            db.prepare("UPDATE student_profiles SET internship_latitude = NULL, internship_longitude = NULL WHERE user_id = ?").run(reqDoc.student_id);
+            await db.run("UPDATE student_profiles SET internship_latitude = NULL, internship_longitude = NULL WHERE user_id = ?", reqDoc.student_id);
             // Notify student
-            db.prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)").run(
+            await db.run("INSERT INTO notifications (user_id, message) VALUES (?, ?)",
               reqDoc.student_id,
               `✅ Your request to change location was approved. Please register your new workplace GPS in the Logbook tab.`
             );
           }
         } else if (status === 'REJECTED') {
-          const reqDoc = db.prepare("SELECT student_id FROM location_change_requests WHERE id = ?").get(req.params.id) as any;
+          const reqDoc = await db.get("SELECT student_id FROM location_change_requests WHERE id = ?", req.params.id);
           if (reqDoc) {
-            db.prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)").run(
+            await db.run("INSERT INTO notifications (user_id, message) VALUES (?, ?)",
               reqDoc.student_id,
               `❌ Your request to change location was rejected. Please contact the administrator.`
             );
           }
         }
-      })();
+      });
       res.json({ success: true });
     } catch (e: any) {
       res.status(400).json({ error: e.message });
     }
   });
 
-  app.put("/api/admin/applications/:id/status", authenticate, authorize("MANAGE_USERS"), (req: any, res) => {
+  app.put("/api/admin/applications/:id/status", authenticate, authorize("MANAGE_USERS"), async (req: any, res) => {
     const { status } = req.body;
     try {
-      db.transaction(() => {
-        db.prepare("UPDATE applications SET status = ? WHERE id = ?").run(status, req.params.id);
+      await db.transaction(async () => {
+        await db.run("UPDATE applications SET status = ? WHERE id = ?", status, req.params.id);
 
         if (status === 'APPROVED') {
-          const app = db.prepare("SELECT student_id, company_id FROM applications WHERE id = ?").get(req.params.id) as any;
+          const app = await db.get("SELECT student_id, company_id FROM applications WHERE id = ?", req.params.id);
           if (app) {
             // Assign the student to this company
-            db.prepare("UPDATE student_profiles SET assigned_company_id = ? WHERE user_id = ?").run(app.company_id, app.student_id);
-            const company: any = db.prepare("SELECT name FROM companies WHERE id = ?").get(app.company_id);
+            await db.run("UPDATE student_profiles SET assigned_company_id = ? WHERE user_id = ?", app.company_id, app.student_id);
+            const company: any = await db.get("SELECT name FROM companies WHERE id = ?", app.company_id);
 
             // Auto-clear all OTHER pending/rejected applications from this student
-            db.prepare(
-              `DELETE FROM applications WHERE student_id = ? AND id != ? AND status IN ('PENDING', 'REJECTED')`
-            ).run(app.student_id, req.params.id);
+            await db.run(
+              `DELETE FROM applications WHERE student_id = ? AND id != ? AND status IN ('PENDING', 'REJECTED')`,
+              app.student_id, req.params.id
+            );
 
             // Notify student of approval
-            db.prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)").run(
+            await db.run("INSERT INTO notifications (user_id, message) VALUES (?, ?)",
               app.student_id,
               `✅ Your application to ${company?.name || 'a company'} has been approved! You are now officially placed. All your other pending applications have been automatically cleared.`
             );
           }
         } else if (status === 'REJECTED') {
-          const app = db.prepare("SELECT student_id, company_id FROM applications WHERE id = ?").get(req.params.id) as any;
+          const app = await db.get("SELECT student_id, company_id FROM applications WHERE id = ?", req.params.id);
           if (app) {
-            const company: any = db.prepare("SELECT name FROM companies WHERE id = ?").get(app.company_id);
-            db.prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)").run(
+            const company: any = await db.get("SELECT name FROM companies WHERE id = ?", app.company_id);
+            await db.run("INSERT INTO notifications (user_id, message) VALUES (?, ?)",
               app.student_id,
               `❌ Your application to ${company?.name || 'a company'} was not approved. Please apply to another company.`
             );
           }
         }
-      })();
+      });
       res.json({ success: true });
     } catch (e: any) {
       res.status(400).json({ error: e.message });
     }
   });
 
-  app.get("/api/admin/users", authenticate, authorize("MANAGE_USERS"), (req: any, res) => {
-    const users = db.prepare("SELECT id, email, full_name, role FROM users").all();
-    res.json(users);
-  });
-
-  app.put("/api/admin/users/:id/role", authenticate, authorize("MANAGE_USERS"), (req: any, res) => {
-    const { role } = req.body;
-    db.prepare("UPDATE users SET role = ? WHERE id = ?").run(role, req.params.id);
-    res.json({ success: true });
-  });
-
-  app.get("/api/admin/students", authenticate, authorize("VIEW_ALL_STUDENTS"), (req: any, res) => {
-    const students = db.prepare(`
-      SELECT u.id, u.full_name, u.email, sp.course, sp.department, sp.school_supervisor_id, sp.assigned_company_id, sp.mat_number
-      FROM users u 
-      JOIN student_profiles sp ON u.id = sp.user_id
-    `).all();
-    res.json(students);
-  });
-
-  app.put("/api/admin/students/:id/assign", authenticate, authorize("MANAGE_USERS"), (req: any, res) => {
-    const { school_supervisor_id, assigned_company_id } = req.body;
-
-    const current = db.prepare("SELECT school_supervisor_id, assigned_company_id FROM student_profiles WHERE user_id = ?").get(req.params.id) as any;
-
-    if (!current) {
-      return res.status(404).json({ error: "Student profile not found" });
+  app.get("/api/admin/users", authenticate, authorize("MANAGE_USERS"), async (req: any, res) => {
+    try {
+      const users = await db.all("SELECT id, email, full_name, role FROM users");
+      res.json(users);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
     }
+  });
 
-    const newSup = school_supervisor_id !== undefined ? school_supervisor_id : current.school_supervisor_id;
-    const newComp = assigned_company_id !== undefined ? assigned_company_id : current.assigned_company_id;
+  app.put("/api/admin/users/:id/role", authenticate, authorize("MANAGE_USERS"), async (req: any, res) => {
+    const { role } = req.body;
+    try {
+      await db.run("UPDATE users SET role = ? WHERE id = ?", role, req.params.id);
+      res.json({ success: true });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
 
-    db.prepare(`
-      UPDATE student_profiles 
-      SET school_supervisor_id = ?, assigned_company_id = ? 
-      WHERE user_id = ?
-    `).run(newSup, newComp, req.params.id);
-    res.json({ success: true });
+  app.get("/api/admin/students", authenticate, authorize("VIEW_ALL_STUDENTS"), async (req: any, res) => {
+    try {
+      const students = await db.all(`
+        SELECT u.id, u.full_name, u.email, sp.course, sp.department, sp.school_supervisor_id, sp.assigned_company_id, sp.mat_number
+        FROM users u 
+        JOIN student_profiles sp ON u.id = sp.user_id
+      `);
+      res.json(students);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.put("/api/admin/students/:id/assign", authenticate, authorize("MANAGE_USERS"), async (req: any, res) => {
+    const { school_supervisor_id, assigned_company_id } = req.body;
+    try {
+      const current = await db.get("SELECT school_supervisor_id, assigned_company_id FROM student_profiles WHERE user_id = ?", req.params.id);
+
+      if (!current) {
+        return res.status(404).json({ error: "Student profile not found" });
+      }
+
+      const newSup = school_supervisor_id !== undefined ? school_supervisor_id : current.school_supervisor_id;
+      const newComp = assigned_company_id !== undefined ? assigned_company_id : current.assigned_company_id;
+
+      await db.run(`
+        UPDATE student_profiles 
+        SET school_supervisor_id = ?, assigned_company_id = ? 
+        WHERE user_id = ?
+      `, newSup, newComp, req.params.id);
+      res.json({ success: true });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
   // Admin sets internship start/end dates for a student
-  app.put("/api/admin/students/:id/internship-dates", authenticate, authorize("MANAGE_USERS"), (req: any, res) => {
+  app.put("/api/admin/students/:id/internship-dates", authenticate, authorize("MANAGE_USERS"), async (req: any, res) => {
     const { internship_start_date, internship_end_date, total_weeks } = req.body;
-    db.prepare(`
-      UPDATE student_profiles 
-      SET internship_start_date = ?, internship_end_date = ?, total_weeks = ?
-      WHERE user_id = ?
-    `).run(internship_start_date || null, internship_end_date || null, total_weeks || 24, req.params.id);
-    res.json({ success: true });
+    try {
+      await db.run(`
+        UPDATE student_profiles 
+        SET internship_start_date = ?, internship_end_date = ?, total_weeks = ?
+        WHERE user_id = ?
+      `, internship_start_date || null, internship_end_date || null, total_weeks || 24, req.params.id);
+      res.json({ success: true });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
   // Public company list — any authenticated user can read (needed for map)
-  app.get("/api/companies", authenticate, (req: any, res) => {
-    const companies = db.prepare("SELECT * FROM companies ORDER BY name ASC").all();
-    res.json(companies);
+  app.get("/api/companies", authenticate, async (req: any, res) => {
+    try {
+      const companies = await db.all("SELECT * FROM companies ORDER BY name ASC");
+      res.json(companies);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
-  app.get("/api/admin/companies", authenticate, authorize("MANAGE_COMPANIES"), (req: any, res) => {
-    const companies = db.prepare("SELECT * FROM companies ORDER BY name ASC").all();
-    res.json(companies);
+  app.get("/api/admin/companies", authenticate, authorize("MANAGE_COMPANIES"), async (req: any, res) => {
+    try {
+      const companies = await db.all("SELECT * FROM companies ORDER BY name ASC");
+      res.json(companies);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
-
-  app.post("/api/admin/companies", authenticate, authorize("MANAGE_COMPANIES"), (req: any, res) => {
+  app.post("/api/admin/companies", authenticate, authorize("MANAGE_COMPANIES"), async (req: any, res) => {
     const { name, email, industry_type, required_skills, address, latitude, longitude } = req.body;
-    db.prepare(`
-      INSERT INTO companies (name, email, industry_type, required_skills, address, latitude, longitude)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(name, email, industry_type, JSON.stringify(required_skills), address, latitude, longitude);
-    res.json({ success: true });
+    try {
+      await db.run(`
+        INSERT INTO companies (name, email, industry_type, required_skills, address, latitude, longitude)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `, name, email, industry_type, JSON.stringify(required_skills), address, latitude, longitude);
+      res.json({ success: true });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
-  app.get("/api/supervisor/students", authenticate, authorize("VIEW_ASSIGNED_STUDENTS"), (req: any, res) => {
-    const students = db.prepare(`
-      SELECT u.id, u.full_name, u.email, sp.course, sp.department,
-             sp.school_supervisor_id, sp.assigned_company_id, sp.mat_number,
-             c.name as assigned_company_name
-      FROM users u 
-      JOIN student_profiles sp ON u.id = sp.user_id 
-      LEFT JOIN companies c ON sp.assigned_company_id = c.id
-      WHERE sp.school_supervisor_id = ?
-    `).all(req.user.id);
-    res.json(students);
+  app.get("/api/supervisor/students", authenticate, authorize("VIEW_ASSIGNED_STUDENTS"), async (req: any, res) => {
+    try {
+      const students = await db.all(`
+        SELECT u.id, u.full_name, u.email, sp.course, sp.department,
+               sp.school_supervisor_id, sp.assigned_company_id, sp.mat_number,
+               c.name as assigned_company_name
+        FROM users u 
+        JOIN student_profiles sp ON u.id = sp.user_id 
+        LEFT JOIN companies c ON sp.assigned_company_id = c.id
+        WHERE sp.school_supervisor_id = ?
+      `, req.user.id);
+      res.json(students);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
-
-  app.get("/api/supervisor/students/:id/logbook", authenticate, authorize("VIEW_ASSIGNED_STUDENTS"), (req: any, res) => {
-    const entries = db.prepare("SELECT * FROM logbook_entries WHERE student_id = ? ORDER BY date DESC").all(req.params.id);
-    res.json(entries);
+  app.get("/api/supervisor/students/:id/logbook", authenticate, authorize("VIEW_ASSIGNED_STUDENTS"), async (req: any, res) => {
+    try {
+      const entries = await db.all("SELECT * FROM logbook_entries WHERE student_id = ? ORDER BY date DESC", req.params.id);
+      res.json(entries);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
-  app.put("/api/supervisor/logbook/:id/comment", authenticate, authorize("APPROVE_LOGS"), (req: any, res) => {
+  app.put("/api/supervisor/logbook/:id/comment", authenticate, authorize("APPROVE_LOGS"), async (req: any, res) => {
     const { comment } = req.body;
-    db.prepare("UPDATE logbook_entries SET supervisor_comment = ? WHERE id = ?").run(comment, req.params.id);
-    // Notify the student
-    const log: any = db.prepare("SELECT student_id FROM logbook_entries WHERE id = ?").get(req.params.id);
-    if (log) {
-      const sup: any = db.prepare("SELECT full_name FROM users WHERE id = ?").get(req.user.id);
-      db.prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)").run(
-        log.student_id,
-        `💬 ${sup?.full_name || 'Your supervisor'} commented on your logbook entry.`
-      );
+    try {
+      await db.run("UPDATE logbook_entries SET supervisor_comment = ? WHERE id = ?", comment, req.params.id);
+      // Notify the student
+      const log: any = await db.get("SELECT student_id FROM logbook_entries WHERE id = ?", req.params.id);
+      if (log) {
+        const sup: any = await db.get("SELECT full_name FROM users WHERE id = ?", req.user.id);
+        await db.run("INSERT INTO notifications (user_id, message) VALUES (?, ?)",
+          log.student_id,
+          `💬 ${sup?.full_name || 'Your supervisor'} commented on your logbook entry.`
+        );
+      }
+      res.json({ success: true });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
     }
-    res.json({ success: true });
   });
 
-  app.get("/api/supervisor/students/:id/grade", authenticate, authorize("VIEW_ASSIGNED_STUDENTS"), (req: any, res) => {
-    const assessment = db.prepare("SELECT * FROM assessments WHERE student_id = ?").get(req.params.id);
-    res.json(assessment || {});
+  app.get("/api/supervisor/students/:id/grade", authenticate, authorize("VIEW_ASSIGNED_STUDENTS"), async (req: any, res) => {
+    try {
+      const assessment = await db.get("SELECT * FROM assessments WHERE student_id = ?", req.params.id);
+      res.json(assessment || {});
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
-
-
-  app.post("/api/supervisor/students/:id/grade", authenticate, authorize("APPROVE_LOGS"), (req: any, res) => {
+  app.post("/api/supervisor/students/:id/grade", authenticate, authorize("APPROVE_LOGS"), async (req: any, res) => {
     const { grade, remarks } = req.body;
+    try {
+      const existing = await db.get("SELECT * FROM assessments WHERE student_id = ?", req.params.id);
 
-    const existing = db.prepare("SELECT * FROM assessments WHERE student_id = ?").get(req.params.id);
-
-    if (existing) {
-      db.prepare("UPDATE assessments SET school_grade = ?, final_remarks = ? WHERE student_id = ?").run(grade, remarks, req.params.id);
-    } else {
-      db.prepare("INSERT INTO assessments (student_id, school_grade, final_remarks) VALUES (?, ?, ?)").run(req.params.id, grade, remarks);
+      if (existing) {
+        await db.run("UPDATE assessments SET school_grade = ?, final_remarks = ? WHERE student_id = ?", grade, remarks, req.params.id);
+      } else {
+        await db.run("INSERT INTO assessments (student_id, school_grade, final_remarks) VALUES (?, ?, ?)", req.params.id, grade, remarks);
+      }
+      res.json({ success: true });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
     }
-    res.json({ success: true });
   });
 
   // --- MEMOS / BROADCASTS ---
-  app.post("/api/admin/memos", authenticate, authorize("MANAGE_USERS"), (req: any, res) => {
+  app.post("/api/admin/memos", authenticate, authorize("MANAGE_USERS"), async (req: any, res) => {
     const { recipient_group, message } = req.body;
     try {
-      db.prepare(`
+      await db.run(`
         INSERT INTO memos (sender_id, recipient_group, message)
         VALUES (?, ?, ?)
-      `).run(req.user.id, recipient_group, message);
+      `, req.user.id, recipient_group, message);
       res.json({ success: true });
     } catch (e: any) {
       res.status(400).json({ error: e.message });
     }
   });
 
-  app.get("/api/memos", authenticate, (req: any, res) => {
-    const roleGroup = req.user.role === 'STUDENT' ? 'STUDENTS' :
-      (req.user.role === 'ADMIN' ? 'ALL' : 'SUPERVISORS');
+  app.get("/api/memos", authenticate, async (req: any, res) => {
+    try {
+      const roleGroup = req.user.role === 'STUDENT' ? 'STUDENTS' :
+        (req.user.role === 'ADMIN' ? 'ALL' : 'SUPERVISORS');
 
-    let memos;
-    if (req.user.role === 'ADMIN') {
-      memos = db.prepare(`
-        SELECT m.*, u.full_name as sender_name 
-        FROM memos m
-        JOIN users u ON m.sender_id = u.id
-        ORDER BY m.created_at DESC
-      `).all();
-    } else {
-      memos = db.prepare(`
-        SELECT m.*, u.full_name as sender_name 
-        FROM memos m
-        JOIN users u ON m.sender_id = u.id
-        WHERE m.recipient_group = 'ALL' OR m.recipient_group = ?
-        ORDER BY m.created_at DESC
-      `).all(roleGroup);
+      let memos;
+      if (req.user.role === 'ADMIN') {
+        memos = await db.all(`
+          SELECT q.*, u.full_name as sender_name FROM (
+            SELECT m.*, m.created_at as ts
+            FROM memos m
+          ) q
+          JOIN users u ON q.sender_id = u.id
+          ORDER BY q.ts DESC
+        `);
+      } else {
+        memos = await db.all(`
+          SELECT q.*, u.full_name as sender_name FROM (
+            SELECT m.*, m.created_at as ts
+            FROM memos m
+            WHERE m.recipient_group = 'ALL' OR m.recipient_group = ?
+          ) q
+          JOIN users u ON q.sender_id = u.id
+          ORDER BY q.ts DESC
+        `, roleGroup);
+      }
+      res.json(memos);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
     }
-    res.json(memos);
   });
 
   // --- VITE MIDDLEWARE ---
@@ -950,7 +1060,7 @@ async function startServer() {
     });
   }
 
-  const PORT = process.env.PORT || 3001;
+  const PORT = parseInt(process.env.PORT || "3001", 10);
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
