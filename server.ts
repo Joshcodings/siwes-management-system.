@@ -470,22 +470,40 @@ async function startServer() {
         return res.json({ advice: "Please complete your profile to get personalized AI career advice." });
       }
 
-      const skillsStr = (student.skills || "").toLowerCase();
-      const courseStr = (student.course || "").toLowerCase();
-      
-      const isTechnical = skillsStr.includes('python') || skillsStr.includes('react') || skillsStr.includes('sql') || skillsStr.includes('java') || courseStr.includes('computer') || courseStr.includes('engineering') || courseStr.includes('science');
-      
-      let advice = "";
-      
-      if (isTechnical) {
-        advice = `Based on your technical profile in **${student.course || 'your field'}**, you have two great paths:\n\n• **Large Industrial Companies**: Great for structure, learning enterprise-scale systems, and solidifying your foundational skills.\n• **Small Companies / Startups**: Fit your potential if you want hands-on experience across multiple domains, where you can learn a lot very quickly by taking on diverse responsibilities.\n\n**AI Recommendation**: A mid-sized to small firm might give you the best rapid learning curve for your specific technical skill set!`;
-      } else {
-        advice = `Looking at your background in **${student.course || 'your field'}**, here is your AI breakdown:\n\n• **Large Industrials / Corporations**: These will offer you excellent structured training programs and a clear understanding of corporate workflows.\n• **Small Companies**: These fit your potential if you are proactive and want to learn a lot by doing. You'll wear many hats and gain practical experience fast.\n\n**AI Recommendation**: Starting in a structured industrial environment might be more comfortable to build your initial confidence.`;
+      if (!process.env.GEMINI_API_KEY) {
+        const skillsStr = (student.skills || "").toLowerCase();
+        const courseStr = (student.course || "").toLowerCase();
+        
+        const isTechnical = skillsStr.includes('python') || skillsStr.includes('react') || skillsStr.includes('sql') || skillsStr.includes('java') || courseStr.includes('computer') || courseStr.includes('engineering') || courseStr.includes('science');
+        
+        let advice = "";
+        if (isTechnical) {
+          advice = `Based on your technical profile in **${student.course || 'your field'}**, you have two great paths:\n\n  **Large Industrial Companies**: Great for structure, learning enterprise-scale systems, and solidifying your foundational skills.\n  **Small Companies / Startups**: Fit your potential if you want hands-on experience across multiple domains, where you can learn a lot very quickly by taking on diverse responsibilities.\n\n**AI Recommendation**: A mid-sized to small firm might give you the best rapid learning curve for your specific technical skill set! (Using Fallback AI)`;
+        } else {
+          advice = `Looking at your background in **${student.course || 'your field'}**, here is your AI breakdown:\n\n  **Large Industrials / Corporations**: These will offer you excellent structured training programs and a clear understanding of corporate workflows.\n  **Small Companies**: These fit your potential if you are proactive and want to learn a lot by doing. You'll wear many hats and gain practical experience fast.\n\n**AI Recommendation**: Starting in a structured industrial environment might be more comfortable to build your initial confidence. (Using Fallback AI)`;
+        }
+        return res.json({ advice });
       }
 
-      res.json({ advice });
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const prompt = `You are an expert career advisor for university students doing their industrial training (SIWES).
+Student Profile:
+- Course: ${student.course || 'Unknown'}
+- Department: ${student.department || 'Unknown'}
+- Skills: ${student.skills || 'General'}
+- Location Preference: ${student.location_preference || 'Flexible'}
+
+Provide 2 short, highly personalized paragraphs of career advice. Highlight what kind of companies they should target and how they can best leverage their specific skills in the industry. Use markdown formatting like bolding.`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-1.5-flash',
+        contents: prompt,
+      });
+
+      res.json({ advice: response.text });
     } catch (e: any) {
-      res.status(500).json({ error: e.message });
+      console.error("AI Career Advice Error:", e);
+      res.status(500).json({ error: "Failed to generate AI advice. Please check your API key." });
     }
   });
 
@@ -655,7 +673,7 @@ Internship Details:
 Generate a short, realistic, professional 2-3 sentence draft of a daily logbook activity they might have done today. Make it highly specific to their field of study and industry. Do not include any greeting, quotation marks, or conversational filler. Just return the pure text draft. Write it in the first person ("Assisted in...", "Participated in...").`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-1.5-flash',
         contents: prompt,
       });
 
