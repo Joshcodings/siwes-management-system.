@@ -96,13 +96,13 @@ const AnimatedStatCard = ({ label, value, icon: Icon, color, bg, subtitle }: {
       whileHover={{ y: -4, boxShadow: '0 20px 40px rgba(0,0,0,0.08)' }}
       className="bg-white p-6 rounded-[24px] border border-[#5A5A40]/10 shadow-sm transition-all cursor-default relative"
     >
-      <div className="flex items-center justify-center sm:items-start sm:justify-start mb-3 sm:mb-4">
+      <div className="flex items-start justify-between mb-4">
         <div style={{ background: bg + '10', borderRadius: 14, padding: 10, border: `1px solid ${bg}20` }}>
           <Icon size={22} style={{ color }} />
         </div>
-        <div className="w-2 h-2 rounded-full absolute top-6 right-6" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
+        <div className="w-2 h-2 rounded-full mt-1" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
       </div>
-      <div className="text-center sm:text-left">
+      <div className="text-left">
         <p className="text-3xl font-bold tabular-nums" style={{ color: '#1A1A1A' }}>{count}</p>
         <p className="text-xs font-semibold text-[#5A5A40] uppercase tracking-wider mt-1">{label}</p>
         {subtitle && <p className="text-[10px] text-gray-500 mt-0.5">{subtitle}</p>}
@@ -1631,7 +1631,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
         </div>
 
         {/* Main Content */}
-        <main className="flex-1 p-4 md:p-8 lg:p-10 overflow-y-auto overflow-x-hidden min-h-0 w-full">
+        <main className="flex-1 p-4 md:p-8 lg:p-10 overflow-y-auto overflow-x-hidden min-h-0 min-w-0 w-full">
           <AnimatePresence mode="wait">
             {activeTab === 'overview' && (
               <motion.div
@@ -1641,12 +1641,12 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-8"
             >
-              <header className="flex flex-col sm:flex-row justify-between items-center sm:items-start gap-4 text-center sm:text-left">
+              <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                   <h1 className="text-2xl md:text-3xl font-serif font-medium text-[#1A1A1A]">Welcome back, {user?.fullName?.split(' ')[0] || 'User'} 👋</h1>
                   <p className="text-sm md:text-base text-gray-500 mt-1">Here's your SIWES progress at a glance.</p>
                 </div>
-                <div className="text-center sm:text-right">
+                <div className="text-right">
                   <p className="text-xs text-gray-400">Today</p>
                   <p className="text-sm font-semibold text-[#5A5A40]">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
                 </div>
@@ -1715,12 +1715,12 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                     transition={{ delay: 0.2 }}
                     className="lg:col-span-2 bg-white p-6 sm:p-8 rounded-[28px] border border-black/5 shadow-sm"
                   >
-                    <div className="flex flex-col sm:flex-row justify-between items-center sm:items-start mb-6 text-center sm:text-left gap-4 sm:gap-0">
+                    <div className="flex justify-between items-start mb-6">
                       <div>
                         <h3 className="font-serif text-xl font-medium">Internship Progress</h3>
                         <p className="text-gray-400 text-sm mt-0.5">Week {Math.min(weeksElapsed, totalWeeks)} of {totalWeeks} — {progress}% complete</p>
                       </div>
-                      <div className="text-center sm:text-right">
+                      <div className="text-right">
                         <span className="text-3xl font-bold text-[#5A5A40]">{progress}%</span>
                         <p className="text-[10px] text-gray-400 uppercase tracking-wider">Complete</p>
                       </div>
@@ -1752,11 +1752,11 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                       ))}
                       {totalWeeks > 12 && <div className="flex items-end pb-1 text-xs text-gray-400 ml-1">+{totalWeeks - 12}w</div>}
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm mt-4">
-                      <div className="flex items-center justify-center sm:justify-start gap-2 text-emerald-600"><CheckCircle2 size={14} /><span>{logbook.filter((l: any) => l.verification_status === 'VERIFIED').length} Verified</span></div>
-                      <div className="flex items-center justify-center sm:justify-start gap-2 text-amber-500"><AlertCircle size={14} /><span>{logbook.filter((l:any) => l.verification_status === 'PENDING').length} Pending</span></div>
-                      <div className="flex items-center justify-center sm:justify-start gap-2 text-red-500"><AlertCircle size={14} /><span>{flagged} Flagged</span></div>
-                      {startDate && <div className="text-gray-400 text-xs flex items-center justify-center sm:justify-start gap-1"><Calendar size={12} />Started {startDate.toLocaleDateString('en-GB', {day:'numeric',month:'short'})}</div>}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                      <div className="flex items-center gap-2 text-emerald-600"><CheckCircle2 size={14} /><span>{logbook.filter((l: any) => l.verification_status === 'VERIFIED').length} Verified</span></div>
+                      <div className="flex items-center gap-2 text-amber-500"><AlertCircle size={14} /><span>{logbook.filter((l:any) => l.verification_status === 'PENDING').length} Pending</span></div>
+                      <div className="flex items-center gap-2 text-red-500"><AlertCircle size={14} /><span>{flagged} Flagged</span></div>
+                      {startDate && <div className="text-gray-400 text-xs flex items-center gap-1"><Calendar size={12} />Started {startDate.toLocaleDateString('en-GB', {day:'numeric',month:'short'})}</div>}
                     </div>
                   </motion.div>
                 );
@@ -1788,7 +1788,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
               >
                 {/* Upcoming Tasks */}
                 <div className="bg-white p-6 rounded-[24px] border border-black/5 shadow-sm">
-                  <h3 className="font-semibold text-sm mb-4 flex items-center justify-center sm:justify-start gap-2">
+                  <h3 className="font-semibold text-sm mb-4 flex items-center gap-2">
                     <Zap size={16} className="text-[#5A5A40]" />
                     Upcoming Tasks
                   </h3>
@@ -1840,7 +1840,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
               </div>
 
               <div className="bg-white p-5 sm:p-8 rounded-2xl sm:rounded-[32px] border border-black/5 shadow-sm">
-                <h3 className="font-serif text-xl mb-6 text-center sm:text-left">Recent Activity</h3>
+                <h3 className="font-serif text-xl mb-6">Recent Activity</h3>
                 {logbook.length === 0 ? (
                   <div className="text-center py-8">
                     <BookOpen size={32} className="mx-auto mb-2 text-gray-200" />
@@ -4046,16 +4046,16 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
         </div>
 
         {/* Main Content */}
-        <main className="flex-1 p-4 md:p-8 lg:p-10 space-y-6 md:space-y-8 overflow-y-auto overflow-x-hidden min-h-0 w-full">
+        <main className="flex-1 p-4 md:p-8 lg:p-10 space-y-6 md:space-y-8 overflow-y-auto overflow-x-hidden min-h-0 min-w-0 w-full">
           <AnimatePresence mode="wait">
             {activeTab === 'overview' && analytics && (
             <motion.div key="overview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
-              <header className="flex flex-col sm:flex-row justify-between items-center sm:items-center gap-4 text-center sm:text-left">
+              <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                   <h1 className="text-2xl md:text-3xl font-serif font-medium">System Overview</h1>
                   <p className="text-sm md:text-base text-gray-500 mt-1">Platform health, activity feed, and quick actions.</p>
                 </div>
-                <div className="text-center sm:text-right">
+                <div className="text-right">
                   <p className="text-xs text-gray-400">Last updated</p>
                   <p className="text-sm font-medium text-[#5A5A40]">{new Date().toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
                 </div>
@@ -4926,7 +4926,7 @@ const SupervisorDashboard = ({ user, token, onLogout }: { user: User, token: str
           </div>
         </div>
 
-      <main className="flex-1 p-4 md:p-10 overflow-y-auto">
+      <main className="flex-1 p-4 md:p-10 overflow-y-auto overflow-x-hidden min-h-0 min-w-0 w-full">
         <AnimatePresence mode="wait">
           {activeTab === 'dashboard' && (
             <motion.div
