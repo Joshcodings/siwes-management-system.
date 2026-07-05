@@ -1552,7 +1552,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
 
       <div className="flex-1 flex overflow-hidden min-h-0">
         {/* Desktop Sidebar (hidden on mobile) */}
-        <div className="hidden md:flex w-64 bg-white border-r border-black/5 p-6 flex-col shrink-0">
+        <div className="hidden md:flex w-64 bg-white border-r border-black/5 p-6 flex-col shrink-0 overflow-y-auto">
           <div className="mb-10 flex items-center justify-between">
             <h2 className="font-serif text-2xl font-extrabold tracking-wider text-[#5A5A40]">SIWES</h2>
             <NotificationBell token={token} />
@@ -1628,16 +1628,16 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
           </div>
         </div>
 
-      {/* Main Content */}
-      <main className="flex-1 p-4 md:p-8 lg:p-10 overflow-y-auto overflow-x-hidden min-h-0">
-        <AnimatePresence mode="wait">
-          {activeTab === 'overview' && (
-            <motion.div
-              key="overview"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="space-y-8"
+        {/* Main Content */}
+        <main className="flex-1 p-4 md:p-8 lg:p-10 overflow-y-auto overflow-x-hidden min-h-0 w-full">
+          <AnimatePresence mode="wait">
+            {activeTab === 'overview' && (
+              <motion.div
+                key="overview"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-8"
             >
               <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
@@ -3567,8 +3567,8 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
           </button>
         </div>
 
-      </main>
-    </div>
+        </main>
+      </div>
     </div>
   );
 };
@@ -3977,9 +3977,9 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
         )}
       </AnimatePresence>
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden min-h-0">
         {/* Desktop Sidebar (hidden on mobile) */}
-        <div className="hidden md:flex w-64 bg-white border-r border-black/5 p-6 space-y-8 flex flex-col shrink-0">
+        <div className="hidden md:flex w-64 bg-white border-r border-black/5 p-6 flex-col shrink-0 overflow-y-auto">
           <div className="flex items-center justify-between">
             <h2 className="font-serif text-2xl font-medium text-[#5A5A40]">Admin Panel</h2>
             <NotificationBell token={token} />
@@ -4043,9 +4043,10 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
           </button>
         </div>
 
-      <main className="flex-1 p-4 md:p-10 space-y-6 md:space-y-10 overflow-y-auto">
-        <AnimatePresence mode="wait">
-          {activeTab === 'overview' && analytics && (
+        {/* Main Content */}
+        <main className="flex-1 p-4 md:p-8 lg:p-10 space-y-6 md:space-y-8 overflow-y-auto overflow-x-hidden min-h-0 w-full">
+          <AnimatePresence mode="wait">
+            {activeTab === 'overview' && analytics && (
             <motion.div key="overview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
               <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
@@ -4676,7 +4677,7 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
             </motion.div>
           )}
         </AnimatePresence>
-      </main>
+        </main>
       </div>
     </div>
   );
