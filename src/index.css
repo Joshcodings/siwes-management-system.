@@ -6,17 +6,60 @@
   --font-sans: "Inter", sans-serif;
 }
 
+/* ── Base Reset ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+}
+
 body {
   font-family: var(--font-sans);
   color: #1A1A1A;
+  margin: 0;
+  padding: 0;
 }
 
-/* ── Spinner ── */
-@keyframes spin {
-  to { transform: rotate(360deg); }
+/* Ensure the main app shell fills the screen correctly on all devices */
+#root {
+  display: flex;
+  flex-direction: column;
 }
 
+/* ── Smooth Scrollbar ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
 
+/* ── No Scrollbar Utility ── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Responsive Table Wrapper ── */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Prevent horizontal overflow globally ── */
+main, section, article {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* ── Fix for h-screen on mobile (handles browser chrome) ── */
+.h-screen-mobile {
+  height: 100vh;
+  height: 100dvh; /* dynamic viewport height - handles mobile browser bars */
+}
 
 /* ── Print Styles ── */
 @media print {
@@ -47,14 +90,7 @@ body {
   animation: badge-pulse 2s ease-in-out infinite;
 }
 
-/* ── Smooth Scrollbar ── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
-
 /* ── Leaflet Map Overrides ── */
-/* Make popups render cleanly */
 .leaflet-popup-content-wrapper {
   border-radius: 16px !important;
   box-shadow: 0 8px 30px rgba(0,0,0,0.15) !important;
@@ -69,22 +105,15 @@ body {
 .leaflet-popup-tip-container {
   margin-top: -1px;
 }
-/* Prevent default blue dot from showing on divIcon markers */
 .siwes-marker {
   background: none !important;
   border: none !important;
 }
 
-/* ── Sleek Custom Scrollbar Hide Utility ── */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-}
-
 /* ── Premium Micro-animations ── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 @keyframes fadeSlideUp {
   from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -155,12 +184,6 @@ button:active {
   border-radius: 8px;
 }
 
-/* ── Smooth page transitions ── */
-* {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
 /* ── Progress bar animation ── */
 .progress-bar-fill {
   transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
@@ -178,4 +201,27 @@ input:focus, textarea:focus, select:focus {
   left: 50%;
   transform: translate(-50%, -50%);
   text-align: center;
+}
+
+/* ── Mobile: prevent tap highlight ── */
+a, button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Safe area padding for notched phones ── */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* ── Fix for fixed floating widget on mobile ── */
+@media (max-width: 768px) {
+  .floating-widget {
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    right: 16px;
+  }
+}
+
+/* ── Recharts responsive container fix ── */
+.recharts-responsive-container {
+  max-width: 100% !important;
 }

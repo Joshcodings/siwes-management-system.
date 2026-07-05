@@ -1425,7 +1425,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-[#F5F5F0] flex items-center justify-center">
+    <div className="min-h-dvh bg-[#F5F5F0] flex items-center justify-center">
       <div className="text-center space-y-4">
         <div className="w-12 h-12 border-4 border-[#5A5A40] border-t-transparent rounded-full animate-spin mx-auto" />
         <p className="text-sm text-gray-400 font-medium">Loading your dashboard…</p>
@@ -1434,7 +1434,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
   );
 
   return (
-    <div className="h-screen bg-[#F5F5F0] flex flex-col overflow-hidden">
+    <div className="h-dvh bg-[#F5F5F0] flex flex-col overflow-hidden">
       {/* Mobile Top Header (hidden on desktop) */}
       <div className="md:hidden flex items-center justify-between bg-white px-6 py-4 border-b border-black/5 shrink-0">
         <div className="flex items-center gap-3">
@@ -1550,9 +1550,9 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
         )}
       </AnimatePresence>
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden min-h-0">
         {/* Desktop Sidebar (hidden on mobile) */}
-        <div className="hidden md:flex w-64 bg-white border-r border-black/5 p-6 flex flex-col shrink-0">
+        <div className="hidden md:flex w-64 bg-white border-r border-black/5 p-6 flex-col shrink-0">
           <div className="mb-10 flex items-center justify-between">
             <h2 className="font-serif text-2xl font-extrabold tracking-wider text-[#5A5A40]">SIWES</h2>
             <NotificationBell token={token} />
@@ -1629,7 +1629,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
         </div>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 md:p-10 overflow-y-auto">
+      <main className="flex-1 p-4 md:p-8 lg:p-10 overflow-y-auto overflow-x-hidden min-h-0">
         <AnimatePresence mode="wait">
           {activeTab === 'overview' && (
             <motion.div
@@ -1651,7 +1651,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
               </header>
 
               {/* 4 Animated Stat Cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                 <AnimatedStatCard
                   label="Today's Log"
                   value={logbook.filter((l: any) => l.date === new Date().toISOString().split('T')[0]).length}
@@ -3868,7 +3868,7 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
   };
 
   return (
-    <div className="h-screen bg-[#F5F5F0] flex flex-col overflow-hidden">
+    <div className="h-dvh bg-[#F5F5F0] flex flex-col overflow-hidden">
       {/* Mobile Top Header (hidden on desktop) */}
       <div className="md:hidden flex items-center justify-between bg-white px-6 py-4 border-b border-black/5 shrink-0">
         <div className="flex items-center gap-3">
@@ -4078,7 +4078,7 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
               )}
 
               {/* ── Stat Cards Row ── */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5">
                 <AnimatedStatCard label="Total Students" value={analytics.totalStudents ?? 0} icon={GraduationCap} color="#5A5A40" bg="#5A5A40" subtitle="Registered in system" />
                 <AnimatedStatCard label="Placed Students" value={analytics.totalPlacements ?? 0} icon={CheckCircle2} color="#16A34A" bg="#16A34A" subtitle={`${analytics.totalStudents > 0 ? Math.round((analytics.totalPlacements/analytics.totalStudents)*100) : 0}% placement rate`} />
                 <AnimatedStatCard label="Companies" value={analytics.totalCompanies ?? 0} icon={Building2} color="#3B82F6" bg="#3B82F6" subtitle="Registered nationwide" />
@@ -4394,8 +4394,9 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
                 )}
               </div>
               <p className="text-sm text-gray-400">{filteredStudents.length} of {students.length} students</p>
-              <div className="bg-white rounded-2xl sm:rounded-[32px] border border-black/5 shadow-sm overflow-x-auto">
-                <table className="w-full text-left min-w-[700px]">
+              <div className="bg-white rounded-2xl sm:rounded-[32px] border border-black/5 shadow-sm">
+                <div className="overflow-x-auto w-full rounded-2xl sm:rounded-[32px]">
+                <table className="w-full text-left" style={{minWidth:'680px'}}>
                   <thead className="bg-gray-50 border-b border-gray-100">
                     <tr>
                       <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-gray-400">Student</th>
@@ -4418,6 +4419,7 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
                     ))}
                   </tbody>
                 </table>
+                </div>
                 {filteredStudents.length === 0 && (
                   <div className="text-center py-16 text-gray-400">
                     {studentSearch ? 'No students match your search.' : 'No students registered yet.'}
@@ -4451,8 +4453,9 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
                 </form>
               </div>
 
-              <div className="bg-white rounded-2xl sm:rounded-[32px] border border-black/5 shadow-sm overflow-x-auto">
-                <table className="w-full text-left min-w-[500px]">
+              <div className="bg-white rounded-2xl sm:rounded-[32px] border border-black/5 shadow-sm">
+                <div className="overflow-x-auto w-full rounded-2xl sm:rounded-[32px]">
+                <table className="w-full text-left" style={{minWidth:'480px'}}>
                   <thead className="bg-gray-50 border-b border-gray-100">
                     <tr>
                       <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-gray-400">Name</th>
@@ -4490,6 +4493,7 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
                     ))}
                   </tbody>
                 </table>
+                </div>
               </div>
             </motion.div>
           )}
