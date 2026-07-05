@@ -20,6 +20,7 @@
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.4.1",
     "cors": "^2.8.6",
+    "date-fns": "^4.4.0",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
     "express-rate-limit": "^8.4.1",
@@ -37,6 +38,7 @@
     "react-dom": "^19.0.0",
     "react-hot-toast": "^2.6.0",
     "react-leaflet": "^5.0.0",
+    "recharts": "^3.9.2",
     "tsx": "^4.21.0",
     "vite": "^6.2.0"
   },

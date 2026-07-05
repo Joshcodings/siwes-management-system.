@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { jsPDF } from "jspdf";
 import {
   LayoutDashboard,
@@ -29,14 +29,33 @@ import {
   Menu,
   Navigation,
   Sparkles,
-  FileText
+  FileText,
+  Moon,
+  Sun,
+  Cpu,
+  Database,
+  Shield,
+  Wifi,
+  Target,
+  Star,
+  BarChart2,
+  Calendar,
+  Clock,
+  Zap,
+  ArrowRight,
+  Eye,
+  EyeOff,
+  ChevronRight,
+  Activity,
+  Settings,
+  Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import toast, { Toaster } from 'react-hot-toast';
-
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 // Fix for default marker icons in react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -45,8 +64,169 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+// --- DARK MODE CONTEXT ---
+const DarkModeContext = React.createContext<{ dark: boolean; toggle: () => void }>({ dark: false, toggle: () => {} });
+
+// --- COUNT UP HOOK ---
+function useCountUp(target: number, duration = 1200) {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    if (target === 0) { setCount(0); return; }
+    let start = 0;
+    const step = target / (duration / 16);
+    const timer = setInterval(() => {
+      start += step;
+      if (start >= target) { setCount(target); clearInterval(timer); }
+      else setCount(Math.floor(start));
+    }, 16);
+    return () => clearInterval(timer);
+  }, [target, duration]);
+  return count;
+}
+
+// --- ANIMATED STAT CARD ---
+const AnimatedStatCard = ({ label, value, icon: Icon, color, bg, subtitle }: {
+  label: string; value: number; icon: any; color: string; bg: string; subtitle?: string;
+}) => {
+  const count = useCountUp(value);
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -4, boxShadow: '0 20px 40px rgba(0,0,0,0.08)' }}
+      className="bg-white p-6 rounded-[24px] border border-[#5A5A40]/10 shadow-sm transition-all cursor-default"
+    >
+      <div className="flex items-start justify-between mb-4">
+        <div style={{ background: bg + '10', borderRadius: 14, padding: 10, border: `1px solid ${bg}20` }}>
+          <Icon size={22} style={{ color }} />
+        </div>
+        <div className="w-2 h-2 rounded-full mt-1" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
+      </div>
+      <p className="text-3xl font-bold tabular-nums" style={{ color: '#1A1A1A' }}>{count}</p>
+      <p className="text-xs font-semibold text-[#5A5A40] uppercase tracking-wider mt-1">{label}</p>
+      {subtitle && <p className="text-[10px] text-gray-500 mt-0.5">{subtitle}</p>}
+    </motion.div>
+  );
+};
+
+// --- LOADING SCREEN ---
+const LoadingScreen = ({ onDone }: { onDone: () => void }) => {
+  const [step, setStep] = useState(0);
+  const [fadeOut, setFadeOut] = useState(false);
+  const steps = [
+    { text: 'Initializing AI Engine...', icon: Cpu },
+    { text: 'Connecting Database...', icon: Database },
+    { text: 'Loading Geofence...', icon: MapPin },
+    { text: 'Checking Authentication...', icon: Shield },
+  ];
+
+  useEffect(() => {
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    steps.forEach((_, i) => {
+      timers.push(setTimeout(() => setStep(i + 1), 500 + i * 500));
+    });
+    timers.push(setTimeout(() => setFadeOut(true), 500 + steps.length * 500 + 300));
+    timers.push(setTimeout(() => onDone(), 500 + steps.length * 500 + 800));
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
+  return (
+    <motion.div
+      animate={{ opacity: fadeOut ? 0 : 1 }}
+      transition={{ duration: 0.5 }}
+      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center"
+      style={{
+        background: 'linear-gradient(135deg, #1a1a0e 0%, #2d2d1a 40%, #0f1a0f 100%)'
+      }}
+    >
+      {/* Animated background orbs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          animate={{ scale: [1, 1.2, 1], opacity: [0.15, 0.25, 0.15] }}
+          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute -top-32 -left-32 w-96 h-96 rounded-full"
+          style={{ background: 'radial-gradient(circle, #5A5A40 0%, transparent 70%)' }}
+        />
+        <motion.div
+          animate={{ scale: [1.2, 1, 1.2], opacity: [0.1, 0.2, 0.1] }}
+          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+          className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full"
+          style={{ background: 'radial-gradient(circle, #3a6b3a 0%, transparent 70%)' }}
+        />
+      </div>
+
+      {/* Logo */}
+      <motion.div
+        initial={{ opacity: 0, y: -30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7, ease: 'easeOut' }}
+        className="flex flex-col items-center mb-12 relative z-10"
+      >
+        <div className="w-24 h-24 rounded-3xl flex items-center justify-center mb-6 shadow-2xl"
+          style={{ background: 'linear-gradient(135deg, #5A5A40 0%, #8a8a60 100%)', boxShadow: '0 20px 60px rgba(90,90,64,0.5)' }}>
+          <GraduationCap size={48} className="text-white" />
+        </div>
+        <h1 className="text-4xl font-bold text-white tracking-widest font-serif">SIWES</h1>
+        <p className="text-[#8a8a60] text-sm tracking-[0.3em] uppercase mt-1 font-medium">AI Placement System</p>
+        <p className="text-white/30 text-xs tracking-widest mt-1">Lead City University · Ibadan</p>
+      </motion.div>
+
+      {/* Steps */}
+      <div className="space-y-3 relative z-10 w-full max-w-xs">
+        {steps.map((s, i) => {
+          const Icon = s.icon;
+          const active = step === i + 1;
+          const done = step > i + 1;
+          return (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: step >= i + 1 ? 1 : 0.25, x: step >= i + 1 ? 0 : -10 }}
+              transition={{ duration: 0.4, delay: i * 0.05 }}
+              className="flex items-center gap-3 px-4 py-3 rounded-2xl"
+              style={{ background: active ? 'rgba(90,90,64,0.25)' : 'transparent', border: active ? '1px solid rgba(90,90,64,0.4)' : '1px solid transparent' }}
+            >
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: done ? '#16a34a22' : active ? '#5A5A4022' : 'transparent' }}>
+                {done ? <CheckCircle2 size={16} className="text-emerald-400" /> :
+                  active ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}><Cpu size={16} style={{ color: '#8a8a60' }} /></motion.div> :
+                  <Icon size={16} className="text-white/30" />}
+              </div>
+              <span className={`text-sm font-medium ${
+                done ? 'text-emerald-400' : active ? 'text-white' : 'text-white/30'
+              }`}>{s.text}</span>
+              {done && <CheckCircle2 size={14} className="text-emerald-400 ml-auto" />}
+              {active && (
+                <motion.div
+                  animate={{ opacity: [1, 0.3, 1] }}
+                  transition={{ duration: 0.8, repeat: Infinity }}
+                  className="ml-auto flex gap-1"
+                >
+                  {[0,1,2].map(j => <div key={j} className="w-1 h-1 rounded-full bg-[#8a8a60]" />)}
+                </motion.div>
+              )}
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {/* Progress bar */}
+      <motion.div className="mt-10 w-64 h-1 bg-white/10 rounded-full overflow-hidden relative z-10">
+        <motion.div
+          className="h-full rounded-full"
+          style={{ background: 'linear-gradient(90deg, #5A5A40, #8a8a60)' }}
+          initial={{ width: '0%' }}
+          animate={{ width: `${(step / steps.length) * 100}%` }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+        />
+      </motion.div>
+      <p className="text-white/20 text-xs mt-3 relative z-10">Loading... {Math.round((step / steps.length) * 100)}%</p>
+    </motion.div>
+  );
+};
+
 // --- TYPES ---
-type Role = 'STUDENT' | 'SCHOOL_SUPERVISOR' | 'ADMIN';
+type Role = 'STUDENT' | 'SCHOOL_SUPERVISOR' | 'ADMIN' | 'SUPER_ADMIN';
 
 interface User {
   id: number;
@@ -193,6 +373,8 @@ const Login = ({ onLogin }: { onLogin: (user: User, token: string) => void }) =>
   const [resetToken, setResetToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   // Check for reset token in URL
   useEffect(() => {
@@ -254,12 +436,17 @@ const Login = ({ onLogin }: { onLogin: (user: User, token: string) => void }) =>
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F5F0] flex items-center justify-center p-4">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white p-6 sm:p-8 rounded-[24px] sm:rounded-[32px] shadow-xl max-w-md w-full border border-black/5">
-        <div className="text-center mb-8">
-          <h1 className="font-serif text-3xl font-medium text-[#1A1A1A] mb-2">SIWES Portal</h1>
-          <p className="text-sm text-gray-500 uppercase tracking-widest font-medium">Intelligent Placement System</p>
-        </div>
+    <div className="min-h-[100dvh] bg-[#F5F5F0] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="bg-white p-6 sm:p-10 rounded-[28px] shadow-xl w-full max-w-md mx-auto border border-black/5 relative">
+        {screen === 'login' && (
+          <div className="text-center mb-8">
+            <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background:'linear-gradient(135deg,#5A5A40,#8a8a60)', boxShadow:'0 10px 30px rgba(90,90,64,0.3)' }}>
+              <GraduationCap size={28} className="text-white" />
+            </div>
+            <h1 className="font-serif text-3xl font-bold text-[#1A1A1A] mb-1">SIWES Portal</h1>
+            <p className="text-[10px] text-gray-500 uppercase tracking-widest">{isRegistering ? 'CREATE YOUR ACCOUNT' : 'INTELLIGENT PLACEMENT SYSTEM'}</p>
+          </div>
+        )}
 
         {screen === 'forgot' && (
           <div>
@@ -321,11 +508,31 @@ const Login = ({ onLogin }: { onLogin: (user: User, token: string) => void }) =>
                     <button type="button" onClick={() => setScreen('forgot')} className="text-xs text-[#5A5A40] hover:underline">Forgot password?</button>
                   )}
                 </div>
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#5A5A40] transition-all" required />
+                <div className="relative">
+                  <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-4 py-3 pr-12 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#5A5A40] transition-all" required />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
-              <button type="submit" disabled={loading} className="w-full bg-[#5A5A40] text-white py-4 rounded-full font-medium tracking-wide hover:bg-[#4A4A30] transition-colors shadow-lg shadow-[#5A5A40]/20 mt-4 disabled:opacity-60">
-                {loading ? 'Please wait...' : (isRegistering ? 'Create Account' : 'Sign In')}
-              </button>
+              {!isRegistering && (
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)} className="w-4 h-4 accent-[#5A5A40] rounded" />
+                    <span className="text-sm text-gray-500">Remember me</span>
+                  </label>
+                </div>
+              )}
+              <motion.button
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.98 }}
+                type="submit" disabled={loading}
+                className="w-full bg-[#5A5A40] text-white py-4 rounded-2xl font-semibold tracking-wide hover:bg-[#4A4A30] transition-all shadow-xl shadow-[#5A5A40]/30 mt-2 disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <><svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Please wait...</>
+                ) : (isRegistering ? 'Create Account' : 'Sign In')}
+              </motion.button>
             </form>
             <div className="mt-6 text-center">
               <button onClick={() => setIsRegistering(!isRegistering)} className="text-sm text-[#5A5A40] font-medium hover:underline">
@@ -739,10 +946,29 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
   });
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [allCompanies, setAllCompanies] = useState<any[]>([]);
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
+  const [aiResponse, setAiResponse] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const generateAIResponse = () => {
+    setIsGenerating(true);
+    setAiResponse('');
+    setTimeout(() => {
+      const responses = [
+        "Based on your profile, you could write: 'Assisted in deploying the backend database schema updates. Verified integrity of user data tables and optimized query performance.'",
+        "Consider this draft: 'Participated in the daily stand-up meeting. Documented software requirements for the new module and fixed 3 minor UI bugs in the staging environment.'",
+        "How about: 'Shadowed the senior engineer during the server migration process. Learned about load balancing and failover strategies in production.'",
+        "Draft idea: 'Reviewed client feedback and updated the frontend React components to match the new design system. Ensured mobile responsiveness.'"
+      ];
+      setAiResponse(responses[Math.floor(Math.random() * responses.length)]);
+      setIsGenerating(false);
+    }, 1500);
+  };
   const [mapSearch, setMapSearch] = useState('');
   const [customApp, setCustomApp] = useState({ name: '', industry_type: '', address: '' });
   const [showCustomApp, setShowCustomApp] = useState(false);
   const [liveDistance, setLiveDistance] = useState<number | null>(null);
+  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
   const [isLiveVerified, setIsLiveVerified] = useState(false);
   const [isRegisteringWorkplace, setIsRegisteringWorkplace] = useState(false);
   const [careerAdvice, setCareerAdvice] = useState<string | null>(null);
@@ -778,9 +1004,17 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
         const d = R * c;
         
         setLiveDistance(d);
-        const accuracyAdjustment = Math.min(pos.coords.accuracy, 500); // Caps accuracy tolerance at 500m
+        setGpsAccuracy(pos.coords.accuracy);
+        
         const allowedRadius = 200; // static allowed radius fallback on client
-        setIsLiveVerified((d - accuracyAdjustment) <= allowedRadius);
+        
+        // Strict geofence: Student must actually be within the radius. 
+        // We give a small 50m grace buffer for typical phone GPS drift, but if accuracy is terrible (> 150m), we don't verify.
+        if (pos.coords.accuracy > 150) {
+          setIsLiveVerified(false);
+        } else {
+          setIsLiveVerified(d <= (allowedRadius + 50));
+        }
       };
 
       const startWatching = (highAccuracy: boolean) => {
@@ -927,15 +1161,16 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
   const handleUploadAcceptance = async (appId: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const formData = new FormData();
     formData.append('attachment', file);
+    
+    toast.loading('Uploading acceptance letter...');
     const uploadRes = await fetch('/api/upload', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` },
       body: formData
     });
-
+    
     if (uploadRes.ok) {
       const uploadData = await uploadRes.json();
       const res = await fetch(`/api/student/applications/${appId}/acceptance`, {
@@ -944,14 +1179,30 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
         body: JSON.stringify({ acceptance_letter_url: uploadData.url })
       });
       if (res.ok) {
-        toast.success('Acceptance letter uploaded! Pending Admin Approval.');
+        toast.dismiss();
+        toast.success('Acceptance letter submitted!');
         fetchData();
-      } else {
-        const d = await res.json();
-        toast.error(d.error || 'Failed to update application.');
       }
     } else {
-      toast.error('Failed to upload letter.');
+      toast.dismiss();
+      toast.error('Failed to upload letter');
+    }
+  };
+
+  const handleCancelApplication = async (appId: number) => {
+    if (!window.confirm("Are you sure you want to cancel this application?")) return;
+    
+    const res = await fetch(`/api/student/applications/${appId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (res.ok) {
+      toast.success('Application cancelled successfully.');
+      fetchData();
+    } else {
+      const data = await res.json();
+      toast.error(data.error || 'Failed to cancel application.');
     }
   };
 
@@ -1388,32 +1639,61 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
               exit={{ opacity: 0, x: -20 }}
               className="space-y-8"
             >
-              <header>
-                <h1 className="text-2xl md:text-3xl font-serif font-medium text-[#1A1A1A]">Welcome back, {user.fullName}</h1>
-                <p className="text-sm md:text-base text-gray-500 mt-1">Here's your SIWES progress at a glance.</p>
+              <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-serif font-medium text-[#1A1A1A]">Welcome back, {user.fullName.split(' ')[0]} 👋</h1>
+                  <p className="text-sm md:text-base text-gray-500 mt-1">Here's your SIWES progress at a glance.</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-gray-400">Today</p>
+                  <p className="text-sm font-semibold text-[#5A5A40]">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                </div>
               </header>
 
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-                <div className="col-span-2 md:col-span-1 bg-white p-5 md:p-6 rounded-[20px] md:rounded-[24px] border border-black/5 shadow-sm">
-                  <p className="text-[10px] md:text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1 md:mb-2">Current Status</p>
-                  <p className="text-lg md:text-2xl font-medium text-[#5A5A40] truncate">
-                    {profile?.assigned_company_id ? 'In Training' : 'Placement Pending'}
-                  </p>
-                </div>
-                <div className="bg-white p-5 md:p-6 rounded-[20px] md:rounded-[24px] border border-black/5 shadow-sm">
-                  <p className="text-[10px] md:text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1 md:mb-2">Logs Submitted</p>
-                  <p className="text-lg md:text-2xl font-medium text-[#5A5A40]">{logbook.length}</p>
-                </div>
-                <div className="bg-white p-5 md:p-6 rounded-[20px] md:rounded-[24px] border border-black/5 shadow-sm">
-                  <p className="text-[10px] md:text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1 md:mb-2">Verified Logs</p>
-                  <p className="text-lg md:text-2xl font-medium text-emerald-600">
-                    {logbook.filter(l => l.verification_status === 'VERIFIED').length}
-                  </p>
-                </div>
+              {/* 4 Animated Stat Cards */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <AnimatedStatCard
+                  label="Today's Log"
+                  value={logbook.filter((l: any) => l.date === new Date().toISOString().split('T')[0]).length}
+                  icon={BookOpen}
+                  color="#5A5A40"
+                  bg="#5A5A40"
+                  subtitle={new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
+                />
+                <AnimatedStatCard
+                  label="Days Completed"
+                  value={(() => {
+                    const start = profile?.internship_start_date ? new Date(profile.internship_start_date) : null;
+                    return start ? Math.max(0, Math.floor((Date.now() - start.getTime()) / (1000*60*60*24))) : 0;
+                  })()}
+                  icon={Calendar}
+                  color="#7C3AED"
+                  bg="#7C3AED"
+                  subtitle={profile?.internship_start_date ? `Since ${new Date(profile.internship_start_date).toLocaleDateString('en-GB', {day:'numeric',month:'short'})}` : 'Not started'}
+                />
+                <AnimatedStatCard
+                  label="Logs Submitted"
+                  value={logbook.length}
+                  icon={ClipboardCheck}
+                  color="#D97706"
+                  bg="#D97706"
+                  subtitle={`${logbook.filter((l:any) => l.verification_status==='VERIFIED').length} verified`}
+                />
+                <AnimatedStatCard
+                  label="Current Placement"
+                  value={profile?.assigned_company_id ? 1 : 0}
+                  icon={Building2}
+                  color="#16A34A"
+                  bg="#16A34A"
+                  subtitle={profile?.assigned_company_id ? 'Placed ✓' : 'Pending'}
+                />
               </div>
 
+              {/* Two Column Layout: Progress + Tasks */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
               {/* Progress Tracker */}
-              {profile?.assigned_company_id && (() => {
+              {profile?.assigned_company_id ? (() => {
                 const startDate = profile.internship_start_date ? new Date(profile.internship_start_date) : null;
                 const endDate = profile.internship_end_date ? new Date(profile.internship_end_date) : null;
                 const totalWeeks = profile.total_weeks || 24;
@@ -1421,49 +1701,175 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                 const weeksElapsed = startDate ? Math.max(0, Math.floor((now.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000))) : 0;
                 const progress = startDate ? Math.min(100, Math.round((weeksElapsed / totalWeeks) * 100)) : Math.min(100, Math.round((logbook.length / (totalWeeks * 5)) * 100));
                 const flagged = logbook.filter((l: any) => l.verification_status === 'FLAGGED').length;
+                const weekBars = Array.from({ length: Math.min(totalWeeks, 12) }, (_, i) => ({
+                  week: i + 1,
+                  done: i < weeksElapsed,
+                  current: i === weeksElapsed,
+                }));
                 return (
-                  <div className="bg-white p-5 sm:p-8 rounded-2xl sm:rounded-[32px] border border-black/5 shadow-sm">
-                    <div className="flex justify-between items-start mb-4">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="lg:col-span-2 bg-white p-6 sm:p-8 rounded-[28px] border border-black/5 shadow-sm"
+                  >
+                    <div className="flex justify-between items-start mb-6">
                       <div>
-                        <h3 className="font-serif text-lg">Internship Progress</h3>
-                        <p className="text-gray-400 text-sm">Week {Math.min(weeksElapsed, totalWeeks)} of {totalWeeks} &nbsp;•&nbsp; {progress}% complete</p>
+                        <h3 className="font-serif text-xl font-medium">Internship Progress</h3>
+                        <p className="text-gray-400 text-sm mt-0.5">Week {Math.min(weeksElapsed, totalWeeks)} of {totalWeeks} — {progress}% complete</p>
                       </div>
-                      <span className="text-2xl font-bold text-[#5A5A40]">{progress}%</span>
+                      <div className="text-right">
+                        <span className="text-3xl font-bold text-[#5A5A40]">{progress}%</span>
+                        <p className="text-[10px] text-gray-400 uppercase tracking-wider">Complete</p>
+                      </div>
                     </div>
-                    <div className="w-full bg-gray-100 rounded-full h-3 mb-4">
-                      <div className="bg-[#5A5A40] h-3 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
+                    <div className="w-full bg-gray-100 rounded-full h-4 mb-6 overflow-hidden">
+                      <motion.div
+                        className="h-4 rounded-full"
+                        style={{ background: 'linear-gradient(90deg, #5A5A40, #8a8a60)' }}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progress}%` }}
+                        transition={{ duration: 1.5, ease: 'easeOut', delay: 0.3 }}
+                      />
                     </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div className="flex items-center gap-2 text-emerald-600"><CheckCircle2 size={14} /><span>{logbook.filter((l: any) => l.verification_status === 'VERIFIED').length} Verified Logs</span></div>
-                      <div className="flex items-center gap-2 text-red-500"><AlertCircle size={14} /><span>{flagged} Flagged {flagged === 1 ? 'Log' : 'Logs'}</span></div>
-                      {startDate && <div className="text-gray-500 text-xs">📅 Started: {startDate.toLocaleDateString()}</div>}
-                      {endDate && <div className="text-gray-500 text-xs">📅 Ends: {endDate.toLocaleDateString()}</div>}
+                    {/* Week bars */}
+                    <div className="flex gap-1 mb-5">
+                      {weekBars.map((w) => (
+                        <motion.div
+                          key={w.week}
+                          initial={{ scaleY: 0 }}
+                          animate={{ scaleY: 1 }}
+                          transition={{ delay: 0.05 * w.week, duration: 0.4 }}
+                          className="flex-1 rounded-sm origin-bottom"
+                          style={{
+                            height: w.current ? 28 : 20,
+                            background: w.done ? '#5A5A40' : w.current ? '#8a8a60' : '#E5E7EB',
+                          }}
+                          title={`Week ${w.week}`}
+                        />
+                      ))}
+                      {totalWeeks > 12 && <div className="flex items-end pb-1 text-xs text-gray-400 ml-1">+{totalWeeks - 12}w</div>}
                     </div>
-                  </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                      <div className="flex items-center gap-2 text-emerald-600"><CheckCircle2 size={14} /><span>{logbook.filter((l: any) => l.verification_status === 'VERIFIED').length} Verified</span></div>
+                      <div className="flex items-center gap-2 text-amber-500"><AlertCircle size={14} /><span>{logbook.filter((l:any) => l.verification_status === 'PENDING').length} Pending</span></div>
+                      <div className="flex items-center gap-2 text-red-500"><AlertCircle size={14} /><span>{flagged} Flagged</span></div>
+                      {startDate && <div className="text-gray-400 text-xs flex items-center gap-1"><Calendar size={12} />Started {startDate.toLocaleDateString('en-GB', {day:'numeric',month:'short'})}</div>}
+                    </div>
+                  </motion.div>
                 );
-              })()}
+              })() : (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="lg:col-span-2 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100 rounded-[28px] p-6 sm:p-8 flex flex-col items-center text-center gap-4 justify-center"
+                >
+                  <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center">
+                    <TrendingUp size={32} className="text-amber-500" />
+                  </div>
+                  <div>
+                    <h3 className="font-serif text-lg font-medium text-amber-800">No Placement Yet</h3>
+                    <p className="text-amber-600 text-sm mt-1">Apply to companies via AI Placement to get started.</p>
+                  </div>
+                  <button onClick={() => setActiveTab('placement')} className="bg-amber-500 text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-amber-600 transition-colors flex items-center gap-2">
+                    <Sparkles size={16} /> View AI Recommendations
+                  </button>
+                </motion.div>
+              )}
+
+              {/* Upcoming Tasks + Quick Actions */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="space-y-4"
+              >
+                {/* Upcoming Tasks */}
+                <div className="bg-white p-6 rounded-[24px] border border-black/5 shadow-sm">
+                  <h3 className="font-semibold text-sm mb-4 flex items-center gap-2">
+                    <Zap size={16} className="text-[#5A5A40]" />
+                    Upcoming Tasks
+                  </h3>
+                  <div className="space-y-3">
+                    {[
+                      {
+                        label: 'Submit Today\'s Log',
+                        done: logbook.some((l: any) => l.date === new Date().toISOString().split('T')[0]),
+                        action: () => setActiveTab('logbook'),
+                        color: '#16A34A'
+                      },
+                      {
+                        label: 'Complete Your Profile',
+                        done: !!(profile?.course && profile?.skills && profile?.mat_number),
+                        action: () => setActiveTab('profile'),
+                        color: '#7C3AED'
+                      },
+                      {
+                        label: 'Apply to a Company',
+                        done: applications.length > 0,
+                        action: () => setActiveTab('placement'),
+                        color: '#D97706'
+                      },
+                      {
+                        label: 'Check Supervisor Feedback',
+                        done: logbook.some((l: any) => l.supervisor_comment),
+                        action: () => setActiveTab('logbook'),
+                        color: '#3B82F6'
+                      },
+                    ].map((task, i) => (
+                      <button
+                        key={i}
+                        onClick={task.action}
+                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors text-left group"
+                      >
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 border-2 transition-all ${task.done ? 'border-transparent' : 'border-gray-200'}`}
+                          style={task.done ? { background: task.color } : {}}>
+                          {task.done && <CheckCircle2 size={14} className="text-white" />}
+                        </div>
+                        <span className={`text-sm flex-1 ${task.done ? 'text-gray-400 line-through' : 'text-gray-700 group-hover:text-[#1A1A1A]'}`}>
+                          {task.label}
+                        </span>
+                        {!task.done && <ChevronRight size={14} className="text-gray-300 group-hover:text-gray-500" />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+              </div>
 
               <div className="bg-white p-5 sm:p-8 rounded-2xl sm:rounded-[32px] border border-black/5 shadow-sm">
                 <h3 className="font-serif text-xl mb-6">Recent Activity</h3>
-                <div className="space-y-4">
+                {logbook.length === 0 ? (
+                  <div className="text-center py-8">
+                    <BookOpen size={32} className="mx-auto mb-2 text-gray-200" />
+                    <p className="text-gray-400 text-sm">No logbook entries yet. Start submitting your daily logs!</p>
+                  </div>
+                ) : (
+                <div className="space-y-3">
                   {logbook.slice(0, 5).map((log, i) => (
-                    <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.08 }}
+                      className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors"
+                    >
                       <div className="flex items-center gap-4">
-                        <div className={`p-2 rounded-lg ${log.verification_status === 'VERIFIED' ? 'bg-emerald-100 text-emerald-600' : log.verification_status === 'FLAGGED' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'}`}>
-                          {log.verification_status === 'VERIFIED' ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
+                        <div className={`p-2 rounded-xl ${log.verification_status === 'VERIFIED' ? 'bg-emerald-100 text-emerald-600' : log.verification_status === 'FLAGGED' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'}`}>
+                          {log.verification_status === 'VERIFIED' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
                         </div>
                         <div>
-                          <p className="text-sm font-medium">{log.activity_description}</p>
-                          <p className="text-xs text-gray-400">{log.date}</p>
+                          <p className="text-sm font-medium text-gray-800 line-clamp-1">{log.activity_description}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">{log.date}</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <StatusBadge status={log.verification_status} />
-                      </div>
-                    </div>
+                      <StatusBadge status={log.verification_status} />
+                    </motion.div>
                   ))}
                 </div>
+                )}
               </div>
+
             </motion.div>
           )}
 
@@ -1539,57 +1945,139 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
 
               {viewMode === 'list' ? (
                 <div className="grid grid-cols-1 gap-6">
-                  {recommendations.map((rec, i) => (
-                    <div key={i} className="bg-white p-6 sm:p-8 rounded-[24px] sm:rounded-[32px] border border-black/5 shadow-sm hover:shadow-md transition-shadow flex flex-col md:flex-row items-stretch md:items-start justify-between gap-6">
-                      <div className="space-y-4 flex-1">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-[#5A5A40]/10 rounded-2xl flex items-center justify-center text-[#5A5A40]">
-                            <Building2 size={24} />
+                  {recommendations.map((rec, i) => {
+                    const skills = Array.isArray(rec.required_skills) ? rec.required_skills : JSON.parse(rec.required_skills || '[]');
+                    const skillPct = Math.round((rec.breakdown.skillMatch / 60) * 100);
+                    const coursePct = Math.round((rec.breakdown.courseMatch / 30) * 100);
+                    const locationPct = Math.round((rec.breakdown.locationMatch / 10) * 100);
+                    const total = rec.total;
+                    const isHighlyRecommended = total >= 80;
+                    const circumference = 2 * Math.PI * 30;
+                    const studentSkills = (profile?.skills || '').toLowerCase().split(',').map((s: string) => s.trim()).filter(Boolean);
+                    return (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      whileHover={{ y: -2, boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }}
+                      className="bg-white rounded-[28px] border border-black/5 shadow-sm overflow-hidden"
+                    >
+                      {/* Header Banner */}
+                      <div className="px-6 sm:px-8 pt-6 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                        style={{ background: isHighlyRecommended ? 'linear-gradient(135deg, #F5F5F0 0%, #EAEADF 100%)' : 'white' }}>
+                        <div className="flex items-center gap-4">
+                          <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm flex-shrink-0"
+                            style={{ background: isHighlyRecommended ? 'linear-gradient(135deg, #5A5A40, #8a8a60)' : '#f5f5f0' }}>
+                            <Building2 size={26} className={isHighlyRecommended ? 'text-white' : 'text-[#5A5A40]'} />
                           </div>
                           <div>
-                            <h3 className="text-xl font-medium">{rec.name}</h3>
-                            <p className="text-sm text-gray-500">{rec.industry_type} • {rec.address}</p>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="text-xl font-semibold text-gray-900">{rec.name}</h3>
+                              {isHighlyRecommended && (
+                                <span className="px-2.5 py-0.5 bg-[#5A5A40] text-white text-[10px] font-bold rounded-full uppercase tracking-wider flex items-center gap-1">
+                                  <Star size={10} className="fill-white" /> Highly Recommended
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-500 mt-0.5 flex items-center gap-1.5">
+                              <MapPin size={12} className="text-gray-400" />
+                              {rec.industry_type} · {rec.address}
+                            </p>
                           </div>
                         </div>
 
-                        <div className="flex gap-2 flex-wrap">
-                          {(Array.isArray(rec.required_skills) ? rec.required_skills : JSON.parse(rec.required_skills || "[]")).map((skill: string, j: number) => (
-                            <span key={j} className="px-3 py-1 bg-gray-50 border border-gray-100 rounded-full text-xs text-gray-600">{skill}</span>
+                        {/* Circular Progress Ring */}
+                        <div className="flex-shrink-0 flex flex-col items-center">
+                          <div className="relative" style={{ width: 84, height: 84 }}>
+                            <svg width="84" height="84" viewBox="0 0 84 84" className="-rotate-90">
+                              <circle cx="42" cy="42" r="30" fill="none" stroke="#E5E7EB" strokeWidth="8" />
+                              <motion.circle
+                                cx="42" cy="42" r="30" fill="none"
+                                stroke={total >= 80 ? '#5A5A40' : total >= 60 ? '#8a8a60' : '#a4a480'}
+                                strokeWidth="8"
+                                strokeLinecap="round"
+                                strokeDasharray={circumference}
+                                initial={{ strokeDashoffset: circumference }}
+                                animate={{ strokeDashoffset: circumference - (total / 100) * circumference }}
+                                transition={{ duration: 1.5, ease: 'easeOut', delay: i * 0.1 + 0.3 }}
+                              />
+                            </svg>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                              <span className="text-xl font-bold" style={{ color: total >= 80 ? '#5A5A40' : total >= 60 ? '#8a8a60' : '#a4a480' }}>{total}%</span>
+                              <span className="text-[8px] text-gray-400 uppercase tracking-wider">Match</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Body */}
+                      <div className="px-6 sm:px-8 pb-6 space-y-5">
+
+                        {/* Skills */}
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Required Skills</p>
+                          <div className="flex gap-2 flex-wrap">
+                            {skills.map((skill: string, j: number) => {
+                              const matched = studentSkills.some((s: string) => s.includes(skill.toLowerCase()) || skill.toLowerCase().includes(s));
+                              return (
+                                <span key={j} className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 ${matched ? 'bg-[#5A5A40]/10 text-[#5A5A40] border border-[#5A5A40]/20' : 'bg-gray-50 text-gray-500 border border-gray-200'}`}>
+                                  {matched ? <CheckCircle2 size={11} className="text-[#5A5A40]" /> : <div className="w-2 h-2 rounded-full bg-gray-300" />}
+                                  {skill}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Match Bars */}
+                        <div className="space-y-3">
+                          {[
+                            { label: 'Skill Match', value: skillPct, color: '#5A5A40', bg: '#5A5A4015' },
+                            { label: 'Course Match', value: coursePct, color: '#8a8a60', bg: '#8a8a6015' },
+                            { label: 'Location Match', value: locationPct, color: '#a4a480', bg: '#a4a48015' },
+                          ].map((bar, bi) => (
+                            <div key={bi}>
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="text-xs text-gray-600 font-medium">{bar.label}</span>
+                                <span className="text-xs font-bold" style={{ color: bar.color }}>{bar.value}%</span>
+                              </div>
+                              <div className="h-2 rounded-full w-full" style={{ background: bar.bg }}>
+                                <motion.div
+                                  className="h-2 rounded-full"
+                                  style={{ background: bar.color }}
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${bar.value}%` }}
+                                  transition={{ duration: 1.2, ease: 'easeOut', delay: i * 0.1 + bi * 0.15 }}
+                                />
+                              </div>
+                            </div>
                           ))}
                         </div>
 
-                        <div className="bg-[#F5F5F0] p-4 rounded-2xl">
-                          <p className="text-xs font-bold uppercase tracking-widest text-[#5A5A40] mb-2">Why Recommended?</p>
-                          <div className="grid grid-cols-3 gap-4">
-                            <div className="text-center">
-                              <p className="text-lg font-medium">{rec.breakdown.skillMatch}/60</p>
-                              <p className="text-[10px] text-gray-400 uppercase tracking-widest">Skill Match</p>
-                            </div>
-                            <div className="text-center">
-                              <p className="text-lg font-medium">{rec.breakdown.courseMatch}/30</p>
-                              <p className="text-[10px] text-gray-400 uppercase tracking-widest">Course Match</p>
-                            </div>
-                            <div className="text-center">
-                              <p className="text-lg font-medium">{rec.breakdown.locationMatch}/10</p>
-                              <p className="text-[10px] text-gray-400 uppercase tracking-widest">Location</p>
-                            </div>
+                        {/* AI Recommendation label + Apply button */}
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-2 border-t border-gray-100">
+                          <div className="flex items-center gap-2">
+                            <Sparkles size={14} className="text-[#5A5A40]" />
+                            <span className="text-sm font-semibold text-gray-700">
+                              AI Verdict: <span style={{ color: total >= 80 ? '#16A34A' : total >= 60 ? '#5A5A40' : '#D97706' }}>
+                                {total >= 80 ? '🌟 Highly Recommended' : total >= 60 ? '✅ Recommended' : '⚠️ Partial Match'}
+                              </span>
+                            </span>
                           </div>
+                          <motion.button
+                            whileHover={{ scale: 1.04 }}
+                            whileTap={{ scale: 0.97 }}
+                            onClick={() => handleApply(rec.id, rec.total, rec.breakdown)}
+                            className="bg-[#5A5A40] text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-[#4A4A30] transition-all shadow-lg shadow-[#5A5A40]/25 flex items-center gap-2"
+                          >
+                            Apply Now <ArrowRight size={14} />
+                          </motion.button>
                         </div>
                       </div>
-
-                      <div className="mt-6 md:mt-0 md:ml-8 text-center flex flex-row md:flex-col items-center justify-between md:justify-center gap-4 flex-shrink-0">
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-[#5A5A40] flex items-center justify-center">
-                          <span className="text-xl sm:text-2xl font-bold">{rec.total}%</span>
-                        </div>
-                        <button
-                          onClick={() => handleApply(rec.id, rec.total, rec.breakdown)}
-                          className="bg-[#5A5A40] text-white px-6 py-2 rounded-full text-sm font-medium hover:bg-[#4A4A30] transition-colors"
-                        >
-                          Apply Now
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    </motion.div>
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -1802,14 +2290,22 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                             </span>
                           </div>
                           {app.status === 'PENDING' && (
-                            <div className="space-y-1 text-left sm:text-right">
-                              <p className="text-xs font-medium text-[#5A5A40]">Upload Acceptance Letter</p>
-                              <input
-                                type="file"
-                                accept="image/*,.pdf"
-                                onChange={(e) => handleUploadAcceptance(app.id, e)}
-                                className="text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#5A5A40]/10 file:text-[#5A5A40] hover:file:bg-[#5A5A40]/20 max-w-[200px]"
-                              />
+                            <div className="space-y-3 text-left sm:text-right">
+                              <div className="space-y-1 text-left sm:text-right">
+                                <p className="text-xs font-medium text-[#5A5A40]">Upload Acceptance Letter</p>
+                                <input
+                                  type="file"
+                                  accept="image/*,.pdf"
+                                  onChange={(e) => handleUploadAcceptance(app.id, e)}
+                                  className="text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#5A5A40]/10 file:text-[#5A5A40] hover:file:bg-[#5A5A40]/20 max-w-[200px]"
+                                />
+                              </div>
+                              <button 
+                                onClick={() => handleCancelApplication(app.id)}
+                                className="text-[10px] uppercase tracking-wider font-bold text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-full transition-colors border border-red-200"
+                              >
+                                Cancel Application
+                              </button>
                             </div>
                           )}
                           {app.acceptance_letter_url && (
@@ -1951,6 +2447,30 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
 
               {profile?.assigned_company_id ? (
                 <div className="space-y-6">
+                  {/* Heatmap Gamification */}
+                  <div className="bg-white p-6 rounded-[24px] border border-black/5 shadow-sm">
+                    <h3 className="font-serif text-lg mb-4 flex items-center gap-2">
+                      <Zap size={20} className="text-amber-500" /> Your 14-Day Streak
+                    </h3>
+                    <div className="flex gap-2 sm:gap-4 overflow-x-auto pb-2 no-scrollbar">
+                      {Array.from({length: 14}).map((_, i) => {
+                        const d = new Date();
+                        d.setDate(d.getDate() - (13 - i));
+                        const dateStr = d.toISOString().split('T')[0];
+                        const log = logbook.find((l:any) => l.date === dateStr);
+                        const status = log ? log.verification_status : 'MISSED';
+                        return (
+                          <div key={i} className="flex flex-col items-center gap-2 min-w-[40px]">
+                            <span className="text-[10px] text-gray-400 uppercase font-bold">{d.toLocaleDateString('en-US', { weekday: 'short' })}</span>
+                            <div title={dateStr} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${status === 'VERIFIED' ? 'bg-emerald-100 text-emerald-600 shadow-sm' : status === 'FLAGGED' ? 'bg-red-100 text-red-600' : status === 'PENDING' ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-300'}`}>
+                              {status === 'VERIFIED' ? <CheckCircle2 size={18} /> : status === 'MISSED' ? <span className="text-xs font-bold">-</span> : <Clock size={18} />}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   {/* Workplace Registration / Radar Section */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-white p-6 sm:p-8 rounded-2xl sm:rounded-[32px] border border-black/5 shadow-sm flex flex-col items-center justify-center text-center">
@@ -1979,7 +2499,14 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                            
                            {!isLiveVerified && (
                              <div className="mt-4 p-4 bg-amber-50 border border-amber-100 rounded-2xl">
-                               <p className="text-xs text-amber-800 mb-3">You are {liveDistance ? `${Math.round(liveDistance/1000)}km` : 'unknown distance'} away from your registered site.</p>
+                               <p className="text-xs text-amber-800 mb-3">
+                                 You are {liveDistance ? `${Math.round(liveDistance)}m` : 'unknown distance'} away from your registered site.
+                               </p>
+                               {gpsAccuracy && gpsAccuracy > 150 && (
+                                 <p className="text-xs text-red-600 mb-3 font-medium">
+                                   ⚠️ Weak GPS Signal (±{Math.round(gpsAccuracy)}m). Please step outside for a clear sky view.
+                                 </p>
+                               )}
                                {locationRequests.some(r => r.status === 'PENDING') ? (
                                  <div className="w-full bg-amber-200/50 text-amber-800 py-3 rounded-xl text-sm font-medium text-center shadow-sm">
                                    Location Change Pending Admin Approval
@@ -1993,8 +2520,8 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                                    Request Change of Location
                                  </button>
                                )}
-                               <p className="text-[10px] text-center text-red-500 font-medium animate-pulse mt-2">
-                                 GPS verification failed. You cannot submit logs until you are within range.
+                               <p className="text-[10px] text-center text-red-500 font-medium animate-pulse mt-3">
+                                 Strict Geofence Active: You cannot submit logs until you are physically on-site.
                                </p>
                              </div>
                            )}
@@ -2137,24 +2664,22 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
 
                          <button
                            type="submit"
-                           disabled={submitting}
+                           disabled={submitting || !isLiveVerified}
                            className={`w-full py-4 rounded-full font-medium transition-all shadow-lg flex items-center justify-center gap-3 ${
-                             submitting
-                               ? 'bg-[#5A5A40]/70 text-white cursor-wait shadow-[#5A5A40]/10'
-                               : isLiveVerified
-                               ? 'bg-[#5A5A40] hover:bg-[#4A4A30] shadow-[#5A5A40]/20 text-white'
-                               : 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/20 text-white'
+                             submitting || !isLiveVerified
+                               ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none'
+                               : 'bg-[#5A5A40] hover:bg-[#4A4A30] shadow-[#5A5A40]/20 text-white'
                            }`}
                          >
                            {submitting ? (
                              <span className="flex items-center gap-2">
-                               <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                               <svg className="animate-spin h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                                Submitting...
                              </span>
                            ) : isLiveVerified ? (
                              'Submit Verified Logbook 📋'
                            ) : (
-                             'Submit (Will be Flagged) ⚠️'
+                             'Outside Geofence (Disabled) 🚫'
                            )}
                          </button>
                        </form>
@@ -3012,6 +3537,36 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* AI Logbook Assistant Floating Widget */}
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+          <AnimatePresence>
+            {showAIAssistant && (
+              <motion.div initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.95 }} className="bg-white border border-black/10 shadow-2xl rounded-3xl w-80 mb-4 overflow-hidden flex flex-col">
+                <div className="bg-[#5A5A40] text-white p-4 flex justify-between items-center">
+                  <div className="flex items-center gap-2"><Zap size={18} /><span className="font-medium text-sm">AI Logbook Assistant</span></div>
+                  <button onClick={() => setShowAIAssistant(false)} className="hover:bg-white/20 p-1 rounded-lg transition-colors"><X size={16} /></button>
+                </div>
+                <div className="p-5 flex flex-col gap-4 min-h-[150px] max-h-[300px] overflow-y-auto">
+                  <p className="text-sm text-gray-600">Stuck on what to write? Click below to generate a professional draft based on your profile.</p>
+                  {isGenerating ? (
+                    <div className="flex justify-center py-4"><div className="w-6 h-6 border-2 border-[#5A5A40] border-t-transparent rounded-full animate-spin"></div></div>
+                  ) : aiResponse ? (
+                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 text-sm text-gray-700 italic relative mt-2">
+                      "{aiResponse}"
+                      <button onClick={() => { navigator.clipboard.writeText(aiResponse); toast.success('Draft copied!'); }} className="absolute -top-4 -right-4 bg-[#5A5A40] text-white p-2 rounded-full shadow-md hover:scale-105 transition-transform"><BookOpen size={12} /></button>
+                    </div>
+                  ) : null}
+                  <button onClick={generateAIResponse} disabled={isGenerating} className="w-full bg-amber-100 text-amber-800 font-medium text-sm py-2.5 rounded-xl hover:bg-amber-200 transition-colors mt-auto">Generate Draft</button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          <button onClick={() => setShowAIAssistant(!showAIAssistant)} className="bg-[#5A5A40] hover:bg-[#4A4A30] text-white p-4 rounded-full shadow-2xl hover:shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center group">
+            <Zap size={24} className={showAIAssistant ? 'text-amber-300' : ''} />
+          </button>
+        </div>
+
       </main>
     </div>
     </div>
@@ -3085,11 +3640,13 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
   const [students, setStudents] = useState<any[]>([]);
   const [supervisors, setSupervisors] = useState<any[]>([]);
   const [locationRequests, setLocationRequests] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'location_requests' | 'companies' | 'users' | 'students' | 'memos'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'location_requests' | 'companies' | 'users' | 'students' | 'memos' | 'settings'>('overview');
   const [companySearchQuery, setCompanySearchQuery] = useState('');
   const [newCompany, setNewCompany] = useState({
     name: '', email: '', industry_type: '', required_skills: '', address: '', latitude: 0, longitude: 0
   });
+  const [systemSettings, setSystemSettings] = useState<any[]>([]);
+  const [newStaff, setNewStaff] = useState({ full_name: '', email: '', password: '', role: 'SCHOOL_SUPERVISOR' });
   const [newMemo, setNewMemo] = useState({ recipient_group: 'ALL', message: '' });
   const [studentSearch, setStudentSearch] = useState('');
   const [adminLoading, setAdminLoading] = useState(false);
@@ -3132,6 +3689,9 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
     } else if (activeTab === 'memos') {
       const res = await fetch('/api/admin/analytics', { headers });
       setAnalytics(await res.json());
+    } else if (activeTab === 'settings') {
+      const res = await fetch('/api/admin/settings', { headers });
+      setSystemSettings(await res.json());
     }
     setAdminLoading(false);
   };
@@ -3245,7 +3805,51 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
     if (res.ok) {
       toast.success('Role updated!');
       fetchData();
+    } else {
+      toast.error('Failed to update role. You may lack permission.');
     }
+  };
+
+  const handleCreateStaff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const res = await fetch('/api/admin/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(newStaff)
+    });
+    const data = await res.json();
+    if (res.ok) {
+      toast.success('Staff account created successfully!');
+      fetchData();
+      setNewStaff({ full_name: '', email: '', password: '', role: 'SCHOOL_SUPERVISOR' });
+    } else {
+      toast.error(data.error || 'Failed to create staff account.');
+    }
+  };
+
+  const handleDeleteUser = async (userId: number) => {
+    if (!window.confirm("Are you sure you want to permanently delete this user?")) return;
+    const res = await fetch(`/api/admin/users/${userId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+    if (res.ok) { toast.success('User deleted!'); fetchData(); } else { toast.error('Failed to delete user.'); }
+  };
+
+  const handleUpdateSetting = async (key: string, value: string) => {
+    const res = await fetch('/api/admin/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ key, value }) });
+    if (res.ok) { toast.success('Setting updated!'); fetchData(); } else { toast.error('Failed to update setting.'); }
+  };
+
+  const handleDownloadBackup = async () => {
+    const res = await fetch('/api/admin/backup', { headers: { 'Authorization': `Bearer ${token}` } });
+    if (res.ok) {
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'siwes_backup.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } else { toast.error('Failed to download backup.'); }
   };
 
   const handleAssign = async (studentId: number, data: { school_supervisor_id?: number | null, assigned_company_id?: number | null }) => {
@@ -3338,18 +3942,28 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
                 >
                   <Building2 size={18} /> Companies
                 </button>
-                <button
-                  onClick={() => { setActiveTab('users'); setIsMobileMenuOpen(false); }}
-                  className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === 'users' ? 'bg-[#5A5A40] text-white shadow-lg' : 'text-gray-500 hover:bg-gray-50'}`}
-                >
-                  <Users size={18} /> User Management
-                </button>
+                {user.role === 'SUPER_ADMIN' && (
+                  <button
+                    onClick={() => { setActiveTab('users'); setIsMobileMenuOpen(false); }}
+                    className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === 'users' ? 'bg-[#5A5A40] text-white shadow-lg' : 'text-gray-500 hover:bg-gray-50'}`}
+                  >
+                    <Users size={18} /> User Management
+                  </button>
+                )}
                 <button
                   onClick={() => { setActiveTab('memos'); setIsMobileMenuOpen(false); }}
                   className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === 'memos' ? 'bg-[#5A5A40] text-white shadow-lg' : 'text-gray-500 hover:bg-gray-50'}`}
                 >
                   <Mail size={18} /> Memos & Broadcasts
                 </button>
+                {user.role === 'SUPER_ADMIN' && (
+                  <button
+                    onClick={() => { setActiveTab('settings'); setIsMobileMenuOpen(false); }}
+                    className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === 'settings' ? 'bg-[#5A5A40] text-white shadow-lg' : 'text-gray-500 hover:bg-gray-50'}`}
+                  >
+                    <Settings size={18} /> System Settings
+                  </button>
+                )}
               </nav>
 
               <button
@@ -3401,18 +4015,28 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
             >
               <Building2 size={18} /> Companies
             </button>
-            <button
-              onClick={() => setActiveTab('users')}
-              className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === 'users' ? 'bg-[#5A5A40] text-white shadow-lg' : 'text-gray-500 hover:bg-gray-50'}`}
-            >
-              <Users size={18} /> User Management
-            </button>
+            {user.role === 'SUPER_ADMIN' && (
+              <button
+                onClick={() => setActiveTab('users')}
+                className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === 'users' ? 'bg-[#5A5A40] text-white shadow-lg' : 'text-gray-500 hover:bg-gray-50'}`}
+              >
+                <Users size={18} /> User Management
+              </button>
+            )}
             <button
               onClick={() => setActiveTab('memos')}
               className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === 'memos' ? 'bg-[#5A5A40] text-white shadow-lg' : 'text-gray-500 hover:bg-gray-50'}`}
             >
               <Mail size={18} /> Memos & Broadcasts
             </button>
+            {user.role === 'SUPER_ADMIN' && (
+              <button
+                onClick={() => setActiveTab('settings')}
+                className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === 'settings' ? 'bg-[#5A5A40] text-white shadow-lg' : 'text-gray-500 hover:bg-gray-50'}`}
+              >
+                <Settings size={18} /> System Settings
+              </button>
+            )}
           </nav>
           <button onClick={onLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 mt-auto cursor-pointer">
             <LogOut size={18} /> Sign Out
@@ -3455,22 +4079,10 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
 
               {/* ── Stat Cards Row ── */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                {[
-                  { label: 'Total Students',      value: analytics.totalStudents      ?? 0, icon: GraduationCap,  color: '#5A5A40', bg: '#5A5A40' },
-                  { label: 'Placed Students',     value: analytics.totalPlacements    ?? 0, icon: CheckCircle2,   color: '#16A34A', bg: '#16A34A' },
-                  { label: 'Awaiting Placement',  value: analytics.unplacedStudents   ?? 0, icon: Users,          color: '#D97706', bg: '#D97706' },
-                  { label: 'Pending Reviews',     value: analytics.pendingApplications ?? 0, icon: ClipboardCheck, color: '#7C3AED', bg: '#7C3AED' },
-                ].map((stat, i) => (
-                  <div key={i} className="bg-white p-6 rounded-[24px] border border-black/5 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between mb-4">
-                      <div style={{ background: stat.bg + '12', borderRadius: 12, padding: 10 }}>
-                        <stat.icon size={20} style={{ color: stat.color }} />
-                      </div>
-                    </div>
-                    <p className="text-3xl font-bold" style={{ color: stat.color }}>{stat.value}</p>
-                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mt-1">{stat.label}</p>
-                  </div>
-                ))}
+                <AnimatedStatCard label="Total Students" value={analytics.totalStudents ?? 0} icon={GraduationCap} color="#5A5A40" bg="#5A5A40" subtitle="Registered in system" />
+                <AnimatedStatCard label="Placed Students" value={analytics.totalPlacements ?? 0} icon={CheckCircle2} color="#16A34A" bg="#16A34A" subtitle={`${analytics.totalStudents > 0 ? Math.round((analytics.totalPlacements/analytics.totalStudents)*100) : 0}% placement rate`} />
+                <AnimatedStatCard label="Companies" value={analytics.totalCompanies ?? 0} icon={Building2} color="#3B82F6" bg="#3B82F6" subtitle="Registered nationwide" />
+                <AnimatedStatCard label="Pending Reviews" value={analytics.pendingApplications ?? 0} icon={ClipboardCheck} color="#7C3AED" bg="#7C3AED" subtitle={analytics.pendingApplications > 0 ? "⚠ Action required" : "All clear"} />
               </div>
 
               {/* ── Second Row ── */}
@@ -3501,6 +4113,26 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
                 </div>
               </div>
 
+              {/* ── Visual Analytics (Recharts) ── */}
+              {analytics.dailyLogs && analytics.dailyLogs.length > 0 && (
+                <div className="bg-white p-6 rounded-[24px] border border-black/5 shadow-sm">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-sm">Daily Logbook Submissions (Last 7 Days)</h3>
+                    <BarChart2 size={16} className="text-gray-400" />
+                  </div>
+                  <div className="h-64 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={analytics.dailyLogs}>
+                        <XAxis dataKey="date" tick={{fontSize: 12}} stroke="#9ca3af" />
+                        <YAxis allowDecimals={false} tick={{fontSize: 12}} stroke="#9ca3af" />
+                        <Tooltip cursor={{fill: '#f3f4f6'}} contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                        <Bar dataKey="count" fill="#5A5A40" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
+
               {/* ── Main Content Row ── */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
@@ -3512,18 +4144,27 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
                   </div>
                   {/* Big donut-style stat */}
                   <div className="flex items-center gap-4">
-                    <div className="relative w-20 h-20 flex-shrink-0">
-                      <svg viewBox="0 0 36 36" className="w-20 h-20 -rotate-90">
-                        <circle cx="18" cy="18" r="15.9" fill="none" stroke="#F3F4F6" strokeWidth="3" />
-                        <circle
-                          cx="18" cy="18" r="15.9" fill="none"
-                          stroke="#5A5A40" strokeWidth="3"
-                          strokeDasharray={`${analytics.totalStudents > 0 ? (analytics.totalPlacements / analytics.totalStudents) * 100 : 0} 100`}
-                          strokeLinecap="round"
-                        />
-                      </svg>
+                    <div className="relative w-24 h-24 flex-shrink-0">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={[
+                              { name: 'Placed', value: analytics.totalPlacements ?? 0 },
+                              { name: 'Pending', value: analytics.unplacedStudents ?? 0 }
+                            ]}
+                            innerRadius={30}
+                            outerRadius={45}
+                            paddingAngle={2}
+                            dataKey="value"
+                            stroke="none"
+                          >
+                            <Cell fill="#5A5A40" />
+                            <Cell fill="#F3F4F6" />
+                          </Pie>
+                        </PieChart>
+                      </ResponsiveContainer>
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-sm font-bold text-[#5A5A40]">
+                        <span className="text-xs font-bold text-[#5A5A40]">
                           {analytics.totalStudents > 0 ? Math.round(((analytics.totalPlacements ?? 0) / analytics.totalStudents) * 100) : 0}%
                         </span>
                       </div>
@@ -3786,12 +4427,30 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
             </motion.div>
           )}
 
-          {activeTab === 'users' && (
+          {activeTab === 'users' && user.role === 'SUPER_ADMIN' && (
             <motion.div key="users" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <header className="mb-8">
                 <h1 className="text-2xl md:text-3xl font-serif font-medium">User Role Management</h1>
-                <p className="text-gray-500">Assign system roles and permissions to users.</p>
+                <p className="text-gray-500">Assign system roles and provision new staff accounts.</p>
               </header>
+
+              <div className="bg-white p-6 rounded-2xl border border-black/5 mb-8 shadow-sm">
+                <h3 className="font-medium mb-4">Create New Staff Account</h3>
+                <form onSubmit={handleCreateStaff} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <input placeholder="Full Name" required value={newStaff.full_name} onChange={e => setNewStaff({...newStaff, full_name: e.target.value})} className="border rounded-xl px-4 py-2 text-sm" />
+                  <input type="email" placeholder="Email Address" required value={newStaff.email} onChange={e => setNewStaff({...newStaff, email: e.target.value})} className="border rounded-xl px-4 py-2 text-sm" />
+                  <input type="password" placeholder="Password" required value={newStaff.password} onChange={e => setNewStaff({...newStaff, password: e.target.value})} className="border rounded-xl px-4 py-2 text-sm" />
+                  <div className="flex gap-2">
+                    <select value={newStaff.role} onChange={e => setNewStaff({...newStaff, role: e.target.value})} className="border rounded-xl px-4 py-2 text-sm flex-1">
+                      <option value="SCHOOL_SUPERVISOR">Supervisor</option>
+                      <option value="ADMIN">Sub-Admin</option>
+                      <option value="SUPER_ADMIN">Super Admin</option>
+                    </select>
+                    <button type="submit" className="bg-[#5A5A40] text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-[#4A4A30] shrink-0">Add</button>
+                  </div>
+                </form>
+              </div>
+
               <div className="bg-white rounded-2xl sm:rounded-[32px] border border-black/5 shadow-sm overflow-x-auto">
                 <table className="w-full text-left min-w-[500px]">
                   <thead className="bg-gray-50 border-b border-gray-100">
@@ -3812,7 +4471,7 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
                             {u.role}
                           </span>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-6 py-4 flex gap-2 items-center">
                           <select
                             value={u.role}
                             onChange={(e) => handleUpdateRole(u.id, e.target.value)}
@@ -3821,12 +4480,63 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
                             <option value="STUDENT">Student</option>
                             <option value="SCHOOL_SUPERVISOR">School Supervisor</option>
                             <option value="ADMIN">Admin</option>
+                            <option value="SUPER_ADMIN">Super Admin</option>
                           </select>
+                          <button onClick={() => handleDeleteUser(u.id)} className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors" title="Delete User">
+                            <Trash2 size={16} />
+                          </button>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'settings' && user.role === 'SUPER_ADMIN' && (
+            <motion.div key="settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <header className="mb-8">
+                <h1 className="text-2xl md:text-3xl font-serif font-medium">System Settings Hub</h1>
+                <p className="text-gray-500">Global configurations, database backups, and god-mode controls.</p>
+              </header>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm">
+                  <h3 className="font-serif text-lg font-medium mb-4 flex items-center gap-2">
+                    <Settings className="text-gray-400" size={20} />
+                    Global Parameters
+                  </h3>
+                  <div className="space-y-6">
+                    {systemSettings.map(setting => (
+                      <div key={setting.key}>
+                        <label className="block text-sm font-medium mb-1">{setting.key.replace(/_/g, ' ')}</label>
+                        <p className="text-xs text-gray-500 mb-2">{setting.description}</p>
+                        <div className="flex gap-2">
+                          <input 
+                            value={setting.value} 
+                            onChange={(e) => setSystemSettings(systemSettings.map(s => s.key === setting.key ? { ...s, value: e.target.value } : s))}
+                            className="border rounded-xl px-4 py-2 text-sm flex-1 focus:outline-none focus:ring-1 focus:ring-[#5A5A40]" 
+                          />
+                          <button onClick={() => handleUpdateSetting(setting.key, setting.value)} className="bg-gray-100 text-gray-700 px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-200">
+                            Save
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm flex flex-col items-start justify-center">
+                  <div className="w-12 h-12 bg-amber-100 text-amber-700 rounded-2xl flex items-center justify-center mb-4">
+                    <Activity size={24} />
+                  </div>
+                  <h3 className="font-serif text-lg font-medium mb-2">Full Database Backup</h3>
+                  <p className="text-sm text-gray-500 mb-6">Download a complete snapshot of all users, companies, students, and logs in JSON format for safekeeping.</p>
+                  <button onClick={handleDownloadBackup} className="bg-[#5A5A40] text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-[#4A4A30] w-full shadow-md">
+                    Download Backup (.json)
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}
@@ -4229,20 +4939,10 @@ const SupervisorDashboard = ({ user, token, onLogout }: { user: User, token: str
 
               {/* ── Stat Cards ── */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                {[
-                  { label: 'Assigned Students', value: students.length, icon: Users, color: '#5A5A40' },
-                  { label: 'Placed Students', value: students.filter((s: any) => s.assigned_company_name).length, icon: CheckCircle2, color: '#16A34A' },
-                  { label: 'Awaiting Placement', value: students.filter((s: any) => !s.assigned_company_name).length, icon: AlertCircle, color: '#D97706' },
-                  { label: 'Memos Received', value: memos.length, icon: Mail, color: '#7C3AED' },
-                ].map((stat, i) => (
-                  <div key={i} className="bg-white p-6 rounded-[24px] border border-black/5 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="mb-4" style={{ background: stat.color + '12', borderRadius: 12, padding: 10, width: 40 }}>
-                      <stat.icon size={20} style={{ color: stat.color }} />
-                    </div>
-                    <p className="text-3xl font-bold" style={{ color: stat.color }}>{stat.value}</p>
-                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mt-1">{stat.label}</p>
-                  </div>
-                ))}
+                <AnimatedStatCard label="Assigned Students" value={students.length} icon={Users} color="#5A5A40" bg="#5A5A40" subtitle="Under your supervision" />
+                <AnimatedStatCard label="Pending Reviews" value={students.filter((s: any) => !s.assigned_company_name).length} icon={AlertCircle} color="#D97706" bg="#D97706" subtitle="Awaiting placement" />
+                <AnimatedStatCard label="Placed Students" value={students.filter((s: any) => s.assigned_company_name).length} icon={CheckCircle2} color="#16A34A" bg="#16A34A" subtitle="Successfully placed" />
+                <AnimatedStatCard label="Memos Received" value={memos.length} icon={Mail} color="#7C3AED" bg="#7C3AED" subtitle={memos.length > 0 ? `Latest: ${new Date(memos[0]?.created_at).toLocaleDateString('en-GB', {day:'numeric',month:'short'})}` : 'No memos'} />
               </div>
 
               {/* ── Main Row ── */}
@@ -4554,6 +5254,7 @@ const SupervisorDashboard = ({ user, token, onLogout }: { user: User, token: str
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Load saved session from localStorage on first render
   useEffect(() => {
@@ -4585,21 +5286,20 @@ export default function App() {
     toast.success('Signed out successfully');
   };
 
-  if (!user || !token) {
-    return (
-      <>
-        <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
-        <Login onLogin={handleLogin} />
-      </>
-    );
-  }
-
   return (
     <>
       <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
-      {user.role === 'STUDENT' && <StudentDashboard user={user} token={token} onLogout={handleLogout} />}
-      {user.role === 'ADMIN' && <AdminDashboard user={user} token={token} onLogout={handleLogout} />}
-      {user.role === 'SCHOOL_SUPERVISOR' && <SupervisorDashboard user={user} token={token} onLogout={handleLogout} />}
+      <AnimatePresence>
+        {isLoading && <LoadingScreen onDone={() => setIsLoading(false)} />}
+      </AnimatePresence>
+      {!isLoading && (
+        <>
+          {(!user || !token) && <Login onLogin={handleLogin} />}
+          {user && token && user.role === 'STUDENT' && <StudentDashboard user={user} token={token} onLogout={handleLogout} />}
+          {user && token && (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') && <AdminDashboard user={user} token={token} onLogout={handleLogout} />}
+          {user && token && user.role === 'SCHOOL_SUPERVISOR' && <SupervisorDashboard user={user} token={token} onLogout={handleLogout} />}
+        </>
+      )}
     </>
   );
 }

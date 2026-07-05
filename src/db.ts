@@ -98,6 +98,8 @@ if (usePostgres) {
   sqliteDb.pragma('foreign_keys = ON');
   sqliteDb.pragma('journal_mode = WAL');
 
+  let sqliteTxLock = Promise.resolve();
+
   db = {
     isPostgres: false,
     async get(sql: string, ...params: any[]) {
@@ -117,8 +119,22 @@ if (usePostgres) {
       sqliteDb.exec(sql);
     },
     async transaction(fn: () => Promise<void> | void) {
-      const tx = sqliteDb.transaction((callback: any) => callback());
-      tx(() => fn());
+      let release: () => void;
+      const acquire = new Promise<void>(resolve => { release = resolve; });
+      const previous = sqliteTxLock;
+      sqliteTxLock = sqliteTxLock.then(() => acquire);
+      
+      await previous;
+      try {
+        sqliteDb.exec('BEGIN');
+        await fn();
+        sqliteDb.exec('COMMIT');
+      } catch (e) {
+        sqliteDb.exec('ROLLBACK');
+        throw e;
+      } finally {
+        release!();
+      }
     }
   };
 }

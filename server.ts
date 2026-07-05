@@ -277,7 +277,8 @@ async function startServer() {
   const ROLE_PERMISSIONS: Record<string, string[]> = {
     STUDENT: ["SUBMIT_LOGS", "VIEW_RECOMMENDATIONS", "MANAGE_PROFILE"],
     SCHOOL_SUPERVISOR: ["VIEW_ASSIGNED_STUDENTS", "APPROVE_LOGS", "GRADE_STUDENTS"],
-    ADMIN: ["MANAGE_USERS", "MANAGE_COMPANIES", "VIEW_ALL_REPORTS", "VIEW_ALL_STUDENTS"]
+    ADMIN: ["MANAGE_USERS", "MANAGE_COMPANIES", "VIEW_ALL_REPORTS", "VIEW_ALL_STUDENTS"],
+    SUPER_ADMIN: ["MANAGE_USERS", "MANAGE_COMPANIES", "VIEW_ALL_REPORTS", "VIEW_ALL_STUDENTS", "ASSIGN_ROLES", "CREATE_STAFF", "SYSTEM_ADMIN"]
   };
 
   // --- MIDDLEWARE ---
@@ -552,6 +553,18 @@ async function startServer() {
     }
   });
 
+  app.delete("/api/student/applications/:id", authenticate, async (req: any, res) => {
+    try {
+      const result = await db.run("DELETE FROM applications WHERE id = ? AND student_id = ? AND status = 'PENDING'", req.params.id, req.user.id);
+      if (result.changes === 0) {
+        return res.status(400).json({ error: "Cannot cancel this application." });
+      }
+      res.json({ success: true });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
   // --- LOGBOOK ---
   app.post("/api/upload", authenticate, upload.single('attachment'), (req: any, res) => {
     if (!req.file) {
@@ -614,6 +627,22 @@ async function startServer() {
     try {
       const student: any = await db.get("SELECT * FROM student_profiles WHERE user_id = ?", req.user.id);
 
+      // 1. Time Travel Validation (Block Future Dates)
+      const submittedDate = new Date(date);
+      const today = new Date();
+      submittedDate.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+      
+      if (submittedDate > today) {
+        return res.status(400).json({ error: "You cannot submit logbook entries for future dates." });
+      }
+
+      // 2. Duplicate Submission Validation (Spamming)
+      const existingLog = await db.get("SELECT id FROM logbook_entries WHERE student_id = ? AND date = ?", req.user.id, date);
+      if (existingLog) {
+        return res.status(400).json({ error: "You have already submitted a logbook entry for this date." });
+      }
+
       if (!student.assigned_company_id) {
         return res.status(400).json({ error: "No company assigned" });
       }
@@ -625,8 +654,26 @@ async function startServer() {
       const targetLon = student.internship_longitude != null ? student.internship_longitude : company.longitude;
       
       const distance = getDistance(latitude, longitude, targetLat, targetLon);
-      const accuracyAdjustment = Math.min(accuracy || 0, 500); // Allow up to 500m fallback error tolerance
-      const status = (distance - accuracyAdjustment) <= company.allowed_radius ? 'VERIFIED' : 'FLAGGED';
+      
+      let globalRadius = 200;
+      try {
+        const radiusSetting = await db.get("SELECT value FROM system_settings WHERE key = 'GEOFENCE_RADIUS'");
+        if (radiusSetting) globalRadius = parseInt(radiusSetting.value, 10);
+      } catch (e) {
+        // Use default
+      }
+      const allowedRadius = company.allowed_radius || globalRadius;
+      
+      // Strict Geofence Enforcement
+      if (accuracy > 150) {
+        return res.status(403).json({ error: "Geofence Violation: GPS signal is too weak (accuracy > 150m). Please step outside." });
+      }
+      
+      if (distance > allowedRadius + 50) {
+        return res.status(403).json({ error: `Geofence Violation: You are ${Math.round(distance)}m away from your registered site. You must be on-site to submit logs.` });
+      }
+
+      const status = 'VERIFIED';
 
       await db.run(`
         INSERT INTO logbook_entries (student_id, company_id, date, activity_description, latitude, longitude, verification_status, distance_from_company, attachment_url)
@@ -707,6 +754,15 @@ async function startServer() {
         GROUP BY TRIM(sp.department) ORDER BY count DESC LIMIT 6
       `);
 
+      // Daily Log submissions for the last 7 days
+      const dailyLogs = await db.all(`
+        SELECT date, COUNT(*) as count 
+        FROM logbook_entries 
+        WHERE date >= date('now', '-7 days')
+        GROUP BY date
+        ORDER BY date ASC
+      `);
+
       res.json({
         totalStudents: totalStudents ? parseInt(totalStudents.count) : 0,
         totalPlacements: totalPlacements ? parseInt(totalPlacements.count) : 0,
@@ -720,6 +776,7 @@ async function startServer() {
         pendingApplications: pendingApplications ? parseInt(pendingApplications.count) : 0,
         recentActivity,
         deptBreakdown,
+        dailyLogs,
       });
     } catch (e: any) {
       res.status(500).json({ error: e.message });
@@ -838,11 +895,82 @@ async function startServer() {
     }
   });
 
-  app.put("/api/admin/users/:id/role", authenticate, authorize("MANAGE_USERS"), async (req: any, res) => {
+  app.put("/api/admin/users/:id/role", authenticate, authorize("ASSIGN_ROLES"), async (req: any, res) => {
     const { role } = req.body;
     try {
       await db.run("UPDATE users SET role = ? WHERE id = ?", role, req.params.id);
       res.json({ success: true });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post("/api/admin/users", authenticate, authorize("CREATE_STAFF"), async (req: any, res) => {
+    const { email, password, full_name, role } = req.body;
+    if (!['SCHOOL_SUPERVISOR', 'ADMIN', 'SUPER_ADMIN'].includes(role)) {
+      return res.status(400).json({ error: "Invalid role specified." });
+    }
+    try {
+      const existingUser = await db.get("SELECT id FROM users WHERE email = ?", email);
+      if (existingUser) {
+        return res.status(400).json({ error: `User with email ${email} already exists.` });
+      }
+      const hashedPassword = bcrypt.hashSync(password, 10);
+      await db.run("INSERT INTO users (email, password, full_name, role) VALUES (?, ?, ?, ?)", email, hashedPassword, full_name, role);
+      res.json({ success: true });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.delete("/api/admin/users/:id", authenticate, authorize("CREATE_STAFF"), async (req: any, res) => {
+    try {
+      // Prevent deleting yourself
+      if (req.user.id.toString() === req.params.id.toString()) {
+        return res.status(400).json({ error: "You cannot delete your own account." });
+      }
+      await db.run("DELETE FROM users WHERE id = ?", req.params.id);
+      res.json({ success: true });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.get("/api/admin/settings", authenticate, authorize("SYSTEM_ADMIN"), async (req: any, res) => {
+    try {
+      const settings = await db.all("SELECT * FROM system_settings");
+      res.json(settings);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.put("/api/admin/settings", authenticate, authorize("SYSTEM_ADMIN"), async (req: any, res) => {
+    const { key, value } = req.body;
+    try {
+      await db.run("UPDATE system_settings SET value = ? WHERE key = ?", value, key);
+      res.json({ success: true });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.get("/api/admin/backup", authenticate, authorize("SYSTEM_ADMIN"), async (req: any, res) => {
+    try {
+      const users = await db.all("SELECT * FROM users");
+      const companies = await db.all("SELECT * FROM companies");
+      const students = await db.all("SELECT * FROM student_profiles");
+      const logs = await db.all("SELECT * FROM logbook_entries");
+      const settings = await db.all("SELECT * FROM system_settings");
+
+      const backup = {
+        timestamp: new Date().toISOString(),
+        data: { users, companies, students, logs, settings }
+      };
+
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', 'attachment; filename=siwes_backup.json');
+      res.send(JSON.stringify(backup, null, 2));
     } catch (e: any) {
       res.status(500).json({ error: e.message });
     }

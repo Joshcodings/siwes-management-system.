@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>System Implementation – AI-Powered SIWES Management System</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #e8e8e8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 30px 20px;
+    }
+
+    .slide {
+      width: 960px;
+      background: #fff;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ── Header Bar ── */
+    .slide-header {
+      background: #1a1a1a;
+      color: #fff;
+      padding: 28px 40px 26px;
+    }
+    .slide-header h1 {
+      font-size: 30px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    /* ── Table Container ── */
+    .table-wrapper {
+      padding: 32px 40px 60px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+      line-height: 1.6;
+    }
+
+    /* Header row */
+    thead tr th {
+      background: #2a2a2a;
+      color: #fff;
+      font-weight: 600;
+      padding: 11px 20px;
+      text-align: center;
+      letter-spacing: 0.2px;
+      font-size: 13px;
+    }
+    thead tr th:first-child {
+      width: 200px;
+      text-align: center;
+    }
+
+    /* Body rows */
+    tbody tr {
+      border-bottom: 1px solid #e2e2e2;
+    }
+    tbody tr:nth-child(odd) {
+      background: #f9f9f9;
+    }
+    tbody tr:nth-child(even) {
+      background: #ffffff;
+    }
+
+    tbody td {
+      padding: 14px 20px;
+      vertical-align: top;
+    }
+
+    /* Component name cell */
+    td.component-name {
+      font-weight: 700;
+      font-size: 13px;
+      color: #1a1a1a;
+      white-space: nowrap;
+      width: 200px;
+    }
+
+    /* Implementation details cell */
+    td.details {
+      color: #3a5a8a;
+      font-size: 13px;
+    }
+
+    /* Slide number */
+    .slide-number {
+      position: absolute;
+      bottom: 18px;
+      right: 32px;
+      font-size: 12px;
+      color: #999;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+<div class="slide">
+  <!-- Header -->
+  <div class="slide-header">
+    <h1>System Implementation</h1>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Component</th>
+          <th>Implementation Details</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr>
+          <td class="component-name">Frontend Interface</td>
+          <td class="details">
+            Olive/Gold-themed, glassmorphism UI built with React 19 + Vite + TailwindCSS 4. Framer Motion (motion/react)
+            powers all page transitions and micro-animations. Persistent sidebar navigation with Dashboard, Placement, Logbook,
+            Applications, Memos, Documents, and Profile tabs — with full mobile responsiveness via a collapsible hamburger menu.
+          </td>
+        </tr>
+
+        <tr>
+          <td class="component-name">Backend Architecture</td>
+          <td class="details">
+            Express.js (Node.js) serves a modular REST API via <code>server.ts</code>. Helmet.js enforces HTTP security
+            headers; express-rate-limit guards all endpoints. better-sqlite3 executes synchronous, atomic database transactions — 
+            preventing race conditions on concurrent logbook submissions or application approvals.
+          </td>
+        </tr>
+
+        <tr>
+          <td class="component-name">Database Layer</td>
+          <td class="details">
+            SQLite database (<code>siwes.db</code>) managed via better-sqlite3. Schema supports six core tables:
+            <em>users</em>, <em>student_profiles</em>, <em>companies</em>, <em>applications</em>,
+            <em>logbook_entries</em>, and <em>memos</em>. Migration scripts (<code>migrate.cjs</code>) handle schema
+            evolution. RBAC permissions are enforced at every query level by role (SUPER_ADMIN, ADMIN, SCHOOL_SUPERVISOR, STUDENT).
+          </td>
+        </tr>
+
+        <tr>
+          <td class="component-name">User Authentication</td>
+          <td class="details">
+            JWT tokens issued on login; stored in React state and attached to every API request via the Authorization header.
+            Passwords hashed with bcryptjs. Custom middleware (<code>authenticate</code> + <code>authorize</code>) on every
+            protected route extracts the userId and role from the JWT payload, isolating multi-tenant data with strict RBAC enforcement.
+          </td>
+        </tr>
+
+        <tr>
+          <td class="component-name">AI Placement Engine</td>
+          <td class="details">
+            Python script (<code>ai_engine.py</code>) spawned server-side via Node.js <code>spawnSync</code>. Computes a
+            100-point composite score per company using: Skill Overlap (0–60 pts), Course Relevance (0–30 pts), and
+            Location Proximity via the Haversine formula (0–10 pts). Results are ranked and returned as JSON to the
+            frontend for display as AI-powered recommendations.
+          </td>
+        </tr>
+
+        <tr>
+          <td class="component-name">GPS Geofence System</td>
+          <td class="details">
+            Browser Geolocation API streams the student's live coordinates. Server calculates real-time distance from the
+            student's registered internship site using the Haversine formula. A configurable geofence radius (default: 300m,
+            adjustable by Super Admin) gates logbook submission — students outside the perimeter cannot submit, preventing
+            fraudulent off-site logging.
+          </td>
+        </tr>
+
+        <tr>
+          <td class="component-name">Data Visualization</td>
+          <td class="details">
+            Recharts library renders interactive <em>PieCharts</em> (Placement Progress) and <em>BarCharts</em> (7-Day
+            Daily Logbook Activity) on the Admin dashboard. The Student Logbook tab features a 14-Day Gamification Streak
+            Heatmap inspired by GitHub contribution calendars — showing verified, pending, flagged, and missed days to
+            encourage consistent daily engagement.
+          </td>
+        </tr>
+
+        <tr>
+          <td class="component-name">Document Generation</td>
+          <td class="details">
+            jsPDF + jspdf-autotable generate all official ITF forms on-demand: SIWES Letter of Introduction, SCAF/SPE-1
+            (Commencement Form), ITF Form 8 (Monthly/Final Appraisal), and a full Student Logbook PDF. All documents are
+            pre-populated with live student and company data from the database and downloaded directly in the browser without
+            any server roundtrip.
+          </td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Slide number -->
+  <div class="slide-number">1 / 1</div>
+</div>
+
+</body>
+</html>
