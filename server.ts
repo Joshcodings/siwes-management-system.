@@ -1,4 +1,5 @@
 import express from "express";
+import { GoogleGenAI } from "@google/genai";
 import { createServer as createViteServer } from "vite";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
@@ -619,6 +620,49 @@ async function startServer() {
       res.json({ success: true });
     } catch (e: any) {
       res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post("/api/student/generate-logbook", authenticate, async (req: any, res) => {
+    try {
+      if (!process.env.GEMINI_API_KEY) {
+        return res.status(503).json({ error: "AI API Key not configured. Administrator needs to add GEMINI_API_KEY to the environment variables." });
+      }
+
+      const student: any = await db.get("SELECT * FROM student_profiles WHERE user_id = ?", req.user.id);
+      let companyName = "the internship company";
+      let industryType = "the relevant industry";
+      
+      if (student?.assigned_company_id) {
+        const company: any = await db.get("SELECT name, industry_type FROM companies WHERE id = ?", student.assigned_company_id);
+        if (company) {
+          companyName = company.name;
+          industryType = company.industry_type;
+        }
+      }
+
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      
+      const prompt = `You are an AI assistant helping a university student write their daily SIWES (industrial training) logbook entry.
+Student Profile:
+- Course: ${student?.course || 'Unknown'}
+- Department: ${student?.department || 'Unknown'}
+- Skills: ${student?.skills || 'General'}
+Internship Details:
+- Company: ${companyName}
+- Industry: ${industryType}
+
+Generate a short, realistic, professional 2-3 sentence draft of a daily logbook activity they might have done today. Make it highly specific to their field of study and industry. Do not include any greeting, quotation marks, or conversational filler. Just return the pure text draft. Write it in the first person ("Assisted in...", "Participated in...").`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+      });
+
+      res.json({ draft: response.text });
+    } catch (e: any) {
+      console.error("AI Generation Error:", e);
+      res.status(500).json({ error: "Failed to generate AI draft. Please try again." });
     }
   });
 

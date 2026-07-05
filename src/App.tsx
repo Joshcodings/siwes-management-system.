@@ -55,6 +55,14 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import toast, { Toaster } from 'react-hot-toast';
+
+const getLocalDateString = (d: Date = new Date()) => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 // Fix for default marker icons in react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -939,7 +947,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
     toast.success(`${docName} downloaded successfully!`);
   };
 
-  const [newLog, setNewLog] = useState({ activity: '', date: new Date().toISOString().split('T')[0], attachment: null as File | null });
+  const [newLog, setNewLog] = useState({ activity: '', date: getLocalDateString(), attachment: null as File | null });
   const [locationRequests, setLocationRequests] = useState<any[]>([]);
   const [locationRequestReason, setLocationRequestReason] = useState('');
   const [showLocationRequestForm, setShowLocationRequestForm] = useState(false);
@@ -952,19 +960,38 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
   const [aiResponse, setAiResponse] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const generateAIResponse = () => {
+  const generateAIResponse = async () => {
     setIsGenerating(true);
     setAiResponse('');
-    setTimeout(() => {
-      const responses = [
-        "Based on your profile, you could write: 'Assisted in deploying the backend database schema updates. Verified integrity of user data tables and optimized query performance.'",
-        "Consider this draft: 'Participated in the daily stand-up meeting. Documented software requirements for the new module and fixed 3 minor UI bugs in the staging environment.'",
-        "How about: 'Shadowed the senior engineer during the server migration process. Learned about load balancing and failover strategies in production.'",
-        "Draft idea: 'Reviewed client feedback and updated the frontend React components to match the new design system. Ensured mobile responsiveness.'"
-      ];
-      setAiResponse(responses[Math.floor(Math.random() * responses.length)]);
+    try {
+      const res = await fetch('/api/student/generate-logbook', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok && data.draft) {
+        setAiResponse(data.draft);
+      } else {
+        toast.error(data.error || "Failed to generate AI draft. Using fallback.");
+        fallbackAIGeneration();
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error. Using fallback.");
+      fallbackAIGeneration();
+    } finally {
       setIsGenerating(false);
-    }, 1500);
+    }
+  };
+
+  const fallbackAIGeneration = () => {
+    const responses = [
+      "Based on your profile, you could write: 'Assisted in deploying the backend database schema updates. Verified integrity of user data tables and optimized query performance.'",
+      "Consider this draft: 'Participated in the daily stand-up meeting. Documented software requirements for the new module and fixed 3 minor UI bugs in the staging environment.'",
+      "How about: 'Shadowed the senior engineer during the server migration process. Learned about load balancing and failover strategies in production.'",
+      "Draft idea: 'Reviewed client feedback and updated the frontend React components to match the new design system. Ensured mobile responsiveness.'"
+    ];
+    setAiResponse(responses[Math.floor(Math.random() * responses.length)]);
   };
   const [mapSearch, setMapSearch] = useState('');
   const [customApp, setCustomApp] = useState({ name: '', industry_type: '', address: '' });
@@ -1078,7 +1105,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
       const results = await Promise.allSettled([
         fetch('/api/student/profile', { headers }),
         fetch('/api/student/recommendations', { headers }),
-        fetch('/api/logbook', { headers }),
+        fetch('/api/logbook?t=' + Date.now(), { headers, cache: 'no-store' }),
         fetch('/api/student/applications', { headers }),
         fetch('/api/memos', { headers }),
         fetch('/api/student/location-requests', { headers })
@@ -1256,7 +1283,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
           toast.success(`✅ Logbook submitted! GPS: ${data.status} — ${Math.round(data.distance)}m from site`);
           setLastSubmitted(new Date().toLocaleTimeString());
           fetchData();
-          setNewLog({ activity: '', date: new Date().toISOString().split('T')[0], attachment: null });
+          setNewLog({ activity: '', date: getLocalDateString(), attachment: null });
         } else {
           toast.error(data.error || 'Failed to submit log');
         }
@@ -1656,7 +1683,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
               <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                 <AnimatedStatCard
                   label="Today's Log"
-                  value={logbook.filter((l: any) => l.date === new Date().toISOString().split('T')[0]).length}
+                  value={logbook.filter((l: any) => l.date === getLocalDateString()).length}
                   icon={BookOpen}
                   color="#5A5A40"
                   bg="#5A5A40"
@@ -1796,7 +1823,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                     {[
                       {
                         label: 'Submit Today\'s Log',
-                        done: logbook.some((l: any) => l.date === new Date().toISOString().split('T')[0]),
+                        done: logbook.some((l: any) => l.date === getLocalDateString()),
                         action: () => setActiveTab('logbook'),
                         color: '#16A34A'
                       },
@@ -2458,7 +2485,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                       {Array.from({length: 14}).map((_, i) => {
                         const d = new Date();
                         d.setDate(d.getDate() - (13 - i));
-                        const dateStr = d.toISOString().split('T')[0];
+                        const dateStr = getLocalDateString(d);
                         const log = logbook.find((l:any) => l.date === dateStr);
                         const status = log ? log.verification_status : 'MISSED';
                         return (
