@@ -1852,7 +1852,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                     <motion.div
                       key={i}
                       initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
+                      animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.08 }}
                       className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors"
                     >
@@ -5310,4 +5310,5 @@ export default function App() {
     </>
   );
 }
+
 
