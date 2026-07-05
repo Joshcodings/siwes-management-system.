@@ -182,7 +182,7 @@ const LoadingScreen = ({ onDone }: { onDone: () => void }) => {
           return (
             <motion.div
               key={i}
-              initial={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: step >= i + 1 ? 1 : 0.25, x: step >= i + 1 ? 0 : -10 }}
               transition={{ duration: 0.4, delay: i * 0.05 }}
               className="flex items-center gap-3 px-4 py-3 rounded-2xl"
@@ -1636,9 +1636,9 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
             {activeTab === 'overview' && (
               <motion.div
                 key="overview"
-                initial={{ opacity: 0, x: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, x: -20 }}
+                exit={{ opacity: 0, y: -10 }}
                 className="space-y-8"
             >
               <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -1852,7 +1852,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                     <motion.div
                       key={i}
                       initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
+                      animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.08 }}
                       className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors"
                     >
@@ -1878,9 +1878,9 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
           {activeTab === 'placement' && (
             <motion.div
               key="placement"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
               className="space-y-8"
             >
               <header className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
@@ -2234,9 +2234,9 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
           {activeTab === 'applications' && (
             <motion.div
               key="applications"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
               className="space-y-8"
             >
               <header>
@@ -2362,9 +2362,9 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
           {activeTab === 'memos' && (
             <motion.div
               key="memos"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
               className="space-y-8"
             >
               <header>
@@ -2403,9 +2403,9 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
           {activeTab === 'logbook' && (
             <motion.div
               key="logbook"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
               className="space-y-8"
             >
               <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -2737,9 +2737,9 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
           {activeTab === 'siwes_letter' && (
             <motion.div
               key="siwes_letter"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
               className="space-y-8"
             >
               <header>
@@ -3099,9 +3099,9 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
           {activeTab === 'profile' && (
             <motion.div
               key="profile"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
               className="space-y-8"
             >
               <header>
@@ -3208,9 +3208,9 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
           {activeTab === 'itf_location' && (
             <motion.div
               key="itf_location"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
               className="space-y-8"
             >
               <header>
@@ -4931,9 +4931,9 @@ const SupervisorDashboard = ({ user, token, onLogout }: { user: User, token: str
           {activeTab === 'dashboard' && (
             <motion.div
               key="dashboard"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
               className="space-y-8"
             >
               <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -5037,9 +5037,9 @@ const SupervisorDashboard = ({ user, token, onLogout }: { user: User, token: str
           {activeTab === 'students' && (
             <motion.div
               key="students"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
               className="space-y-8"
             >
               <header className="flex justify-between items-end">
@@ -5078,7 +5078,7 @@ const SupervisorDashboard = ({ user, token, onLogout }: { user: User, token: str
           )}
 
           {activeTab === 'logbooks' && selectedStudent && (
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
               <header className="flex items-center justify-between">
                 <div>
                   <h1 className="text-xl md:text-3xl font-serif font-medium">{selectedStudent.full_name}'s Logbook</h1>
@@ -5136,7 +5136,7 @@ const SupervisorDashboard = ({ user, token, onLogout }: { user: User, token: str
           )}
 
           {activeTab === 'assessments' && selectedStudent && (
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
               <header className="flex items-center justify-between">
                 <div>
                   <h1 className="text-xl md:text-3xl font-serif font-medium">{selectedStudent.full_name}'s Assessment</h1>
@@ -5210,9 +5210,9 @@ const SupervisorDashboard = ({ user, token, onLogout }: { user: User, token: str
           {activeTab === 'memos' && (
             <motion.div
               key="memos"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
               className="space-y-8"
             >
               <header>
@@ -5310,3 +5310,4 @@ export default function App() {
     </>
   );
 }
+
