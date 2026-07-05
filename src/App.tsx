@@ -1427,7 +1427,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
   };
 
   if (loading) return (
-    <div className="min-h-dvh bg-[#F5F5F0] flex items-center justify-center">
+    <div className="min-h-screen-safe bg-[#F5F5F0] flex items-center justify-center">
       <div className="text-center space-y-4">
         <div className="w-12 h-12 border-4 border-[#5A5A40] border-t-transparent rounded-full animate-spin mx-auto" />
         <p className="text-sm text-gray-400 font-medium">Loading your dashboard…</p>
@@ -1436,7 +1436,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
   );
 
   return (
-    <div className="h-dvh bg-[#F5F5F0] flex flex-col overflow-hidden">
+    <div className="h-screen-safe bg-[#F5F5F0] flex flex-col overflow-hidden">
       {/* Mobile Top Header (hidden on desktop) */}
       <div className="md:hidden flex items-center justify-between bg-white px-6 py-4 border-b border-black/5 shrink-0">
         <div className="flex items-center gap-3">
@@ -1536,7 +1536,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                     <UserCircle size={20} />
                   </div>
                   <div className="overflow-hidden">
-                    <p className="text-xs font-bold truncate">{user.fullName}</p>
+                    <p className="text-xs font-bold truncate">{user?.fullName || 'User'}</p>
                     <p className="text-[10px] text-gray-400 uppercase tracking-wider">Student</p>
                   </div>
                 </div>
@@ -1643,7 +1643,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
             >
               <header className="flex flex-col sm:flex-row justify-between items-center sm:items-start gap-4 text-center sm:text-left">
                 <div>
-                  <h1 className="text-2xl md:text-3xl font-serif font-medium text-[#1A1A1A]">Welcome back, {user.fullName.split(' ')[0]} 👋</h1>
+                  <h1 className="text-2xl md:text-3xl font-serif font-medium text-[#1A1A1A]">Welcome back, {user?.fullName?.split(' ')[0] || 'User'} 👋</h1>
                   <p className="text-sm md:text-base text-gray-500 mt-1">Here's your SIWES progress at a glance.</p>
                 </div>
                 <div className="text-center sm:text-right">
@@ -2422,7 +2422,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                       doc.setFontSize(18);
                       doc.text('SIWES Logbook Report', 14, 20);
                       doc.setFontSize(11);
-                      doc.text(`Student: ${user.fullName}`, 14, 32);
+                      doc.text(`Student: ${user?.fullName || 'User'}`, 14, 32);
                       doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 39);
                       autoTable(doc, {
                         startY: 50,
@@ -2431,7 +2431,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                         styles: { fontSize: 9 },
                         headStyles: { fillColor: [90, 90, 64] }
                       });
-                      doc.save(`SIWES_Logbook_${user.fullName.replace(' ', '_')}.pdf`);
+                      doc.save(`SIWES_Logbook_${(user?.fullName || 'User').replace(/ /g, '_')}.pdf`);
                       toast.success('Logbook PDF downloaded!');
                     }}
                     className="flex-1 sm:flex-initial border border-[#5A5A40] text-[#5A5A40] px-5 py-3 rounded-full text-xs sm:text-sm font-medium flex items-center justify-center gap-2 hover:bg-[#5A5A40]/5 transition-colors"
@@ -2756,7 +2756,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                     <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Student Name</label>
                     <input
                       type="text"
-                      value={user.fullName}
+                      value={user?.fullName || ''}
                       disabled
                       className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-500 cursor-not-allowed font-medium"
                     />
@@ -2915,7 +2915,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                       doc.setFont('times', 'normal');
                       doc.text('Full Name of Student:', 20, p1Offset + 15);
                       doc.setFont('times', 'bold');
-                      doc.text(user.fullName, 65, p1Offset + 15);
+                      doc.text(user?.fullName || 'User', 65, p1Offset + 15);
 
                       doc.setFont('times', 'normal');
                       doc.text('Matriculation Number:', 20, p1Offset + 21);
@@ -2978,7 +2978,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                       doc.text('* SIWES OFFICE *', 150, signOffset + 15, { align: 'center' });
                       doc.text('OFFICIALLY APPROVED', 150, signOffset + 21, { align: 'center' });
 
-                      doc.save(`SIWES_Introduction_Letter_${user.fullName.replace(' ', '_')}.pdf`);
+                      doc.save(`SIWES_Introduction_Letter_${(user?.fullName || 'User').replace(/ /g, '_')}.pdf`);
                       toast.success('Official Introduction Letter downloaded successfully!');
                     }}
                     className="w-full bg-[#5A5A40] text-white py-4 rounded-xl font-medium hover:bg-[#4A4A30] transition-colors shadow-lg shadow-[#5A5A40]/10 flex items-center justify-center gap-2"
@@ -3045,7 +3045,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                           <div>
                             <span className="text-gray-400 block text-[10px] uppercase">Full Name</span>
-                            <span className="font-semibold text-gray-900">{user.fullName}</span>
+                            <span className="font-semibold text-gray-900">{user?.fullName || 'User'}</span>
                           </div>
                           <div>
                             <span className="text-gray-400 block text-[10px] uppercase">Matric Number</span>
@@ -3398,7 +3398,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                                   <div className="grid grid-cols-2 gap-3 text-left">
                                     <div>
                                       <span className="text-[8px] text-gray-400 block font-sans">FULL NAME OF STUDENT:</span>
-                                      <span className="font-semibold underline decoration-dotted text-gray-700">{user.fullName}</span>
+                                      <span className="font-semibold underline decoration-dotted text-gray-700">{user?.fullName || 'User'}</span>
                                     </div>
                                     <div>
                                       <span className="text-[8px] text-gray-400 block font-sans">MATRICULATION NO:</span>
@@ -3870,7 +3870,7 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
   };
 
   return (
-    <div className="h-dvh bg-[#F5F5F0] flex flex-col overflow-hidden">
+    <div className="h-screen-safe bg-[#F5F5F0] flex flex-col overflow-hidden">
       {/* Mobile Top Header (hidden on desktop) */}
       <div className="md:hidden flex items-center justify-between bg-white px-6 py-4 border-b border-black/5 shrink-0">
         <div className="flex items-center gap-3">
@@ -4848,7 +4848,7 @@ const SupervisorDashboard = ({ user, token, onLogout }: { user: User, token: str
                     <UserCircle size={20} />
                   </div>
                   <div className="overflow-hidden">
-                    <p className="text-xs font-bold truncate">{user.fullName}</p>
+                    <p className="text-xs font-bold truncate">{user?.fullName || 'User'}</p>
                     <p className="text-[10px] text-gray-400 uppercase tracking-wider">{user.role.replace('_', ' ')}</p>
                   </div>
                 </div>
@@ -4913,7 +4913,7 @@ const SupervisorDashboard = ({ user, token, onLogout }: { user: User, token: str
                 <UserCircle size={20} />
               </div>
               <div className="overflow-hidden">
-                <p className="text-xs font-bold truncate">{user.fullName}</p>
+                <p className="text-xs font-bold truncate">{user?.fullName || 'User'}</p>
                 <p className="text-[10px] text-gray-400 uppercase tracking-wider">{user.role.replace('_', ' ')}</p>
               </div>
             </div>
@@ -4938,7 +4938,7 @@ const SupervisorDashboard = ({ user, token, onLogout }: { user: User, token: str
             >
               <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <h1 className="text-2xl md:text-3xl font-serif font-medium text-[#1A1A1A]">Welcome back, {user.fullName.split(' ')[0]}</h1>
+                  <h1 className="text-2xl md:text-3xl font-serif font-medium text-[#1A1A1A]">Welcome back, {user?.fullName?.split(' ')[0] || 'User'}</h1>
                   <p className="text-gray-500 mt-1">Here's a snapshot of your students' progress.</p>
                 </div>
                 <p className="text-sm text-gray-400 font-medium">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
