@@ -2486,7 +2486,10 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                         const d = new Date();
                         d.setDate(d.getDate() - (13 - i));
                         const dateStr = getLocalDateString(d);
-                        const log = logbook.find((l:any) => l.date === dateStr);
+                        const log = logbook.find((l:any) => {
+                          const logDate = l.date ? String(l.date).substring(0, 10) : '';
+                          return logDate === dateStr;
+                        });
                         const status = log ? log.verification_status : 'MISSED';
                         return (
                           <div key={i} className="flex flex-col items-center gap-2 min-w-[40px]">

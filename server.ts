@@ -464,8 +464,9 @@ async function startServer() {
 
   // --- AI CAREER ADVICE ---
   app.get("/api/student/career-advice", authenticate, async (req: any, res) => {
+    let student: any = null;
     try {
-      const student: any = await db.get("SELECT * FROM student_profiles WHERE user_id = ?", req.user.id);
+      student = await db.get("SELECT * FROM student_profiles WHERE user_id = ?", req.user.id);
       if (!student) {
         return res.json({ advice: "Please complete your profile to get personalized AI career advice." });
       }
@@ -474,18 +475,7 @@ async function startServer() {
       apiKey = apiKey.replace(/['"]+/g, '').trim();
 
       if (!apiKey) {
-        const skillsStr = (student.skills || "").toLowerCase();
-        const courseStr = (student.course || "").toLowerCase();
-        
-        const isTechnical = skillsStr.includes('python') || skillsStr.includes('react') || skillsStr.includes('sql') || skillsStr.includes('java') || courseStr.includes('computer') || courseStr.includes('engineering') || courseStr.includes('science');
-        
-        let advice = "";
-        if (isTechnical) {
-          advice = `Based on your technical profile in **${student.course || 'your field'}**, you have two great paths:\n\n  **Large Industrial Companies**: Great for structure, learning enterprise-scale systems, and solidifying your foundational skills.\n  **Small Companies / Startups**: Fit your potential if you want hands-on experience across multiple domains, where you can learn a lot very quickly by taking on diverse responsibilities.\n\n**AI Recommendation**: A mid-sized to small firm might give you the best rapid learning curve for your specific technical skill set! (Using Fallback AI)`;
-        } else {
-          advice = `Looking at your background in **${student.course || 'your field'}**, here is your AI breakdown:\n\n  **Large Industrials / Corporations**: These will offer you excellent structured training programs and a clear understanding of corporate workflows.\n  **Small Companies**: These fit your potential if you are proactive and want to learn a lot by doing. You'll wear many hats and gain practical experience fast.\n\n**AI Recommendation**: Starting in a structured industrial environment might be more comfortable to build your initial confidence. (Using Fallback AI)`;
-        }
-        return res.json({ advice });
+        throw new Error("no-key");
       }
 
       const ai = new GoogleGenAI({ apiKey: apiKey });
@@ -505,23 +495,19 @@ Provide 2 short, highly personalized paragraphs of career advice. Highlight what
           contents: prompt,
         });
       } catch (err: any) {
-        if (err.message && err.message.includes("not found")) {
-          response = await ai.models.generateContent({
-             model: 'gemini-1.5-pro',
-             contents: prompt,
-          });
-        } else {
-          throw err;
-        }
+        response = await ai.models.generateContent({
+           model: 'gemini-1.5-pro',
+           contents: prompt,
+        });
       }
 
       res.json({ advice: response.text });
     } catch (e: any) {
       console.error("AI Career Advice Error, using presentation fallback:", e.message);
       
-      const skillsStr = student.skills || "your technical skills";
-      const courseStr = student.course || "your degree";
-      const advice = `**Target Tech-Forward Companies**\nBased on your background in ${courseStr}, you should prioritize companies that heavily utilize ${skillsStr}. These environments will give you the practical exposure needed to bridge the gap between academic theory and real-world application.\n\n**Leverage Your Unique Strengths**\nDuring your SIWES, don't just follow instructions—actively look for ways to optimize existing workflows using ${skillsStr}. Employers look for proactive interns who can identify bottlenecks and suggest improvements.`;
+      const skillsStr = (student && student.skills) ? student.skills : "your technical skills";
+      const courseStr = (student && student.course) ? student.course : "your degree";
+      const advice = `**Target Tech-Forward Companies**\n\nBased on your background in **${courseStr}**, you should prioritize companies that heavily utilize **${skillsStr}**. These environments will give you the practical exposure needed to bridge the gap between academic theory and real-world application.\n\n**Leverage Your Unique Strengths**\n\nDuring your SIWES, don't just follow instructions — actively look for ways to optimize existing workflows using **${skillsStr}**. Employers look for proactive interns who identify bottlenecks and suggest improvements. Your profile makes you an excellent fit for **mid-sized tech companies** where you can grow quickly.`;
       
       res.json({ advice });
     }
@@ -681,17 +667,11 @@ Provide 2 short, highly personalized paragraphs of career advice. Highlight what
   });
 
   app.post("/api/student/generate-logbook", authenticate, async (req: any, res) => {
+    let student: any = null;
+    let companyName = "the internship company";
+    let industryType = "the relevant industry";
     try {
-      let apiKey = process.env.GEMINI_API_KEY || "";
-      apiKey = apiKey.replace(/['"]+/g, '').trim();
-
-      if (!apiKey) {
-        return res.status(503).json({ error: "AI API Key not configured. Administrator needs to add GEMINI_API_KEY to the environment variables." });
-      }
-
-      const student: any = await db.get("SELECT * FROM student_profiles WHERE user_id = ?", req.user.id);
-      let companyName = "the internship company";
-      let industryType = "the relevant industry";
+      student = await db.get("SELECT * FROM student_profiles WHERE user_id = ?", req.user.id);
       
       if (student?.assigned_company_id) {
         const company: any = await db.get("SELECT name, industry_type FROM companies WHERE id = ?", student.assigned_company_id);
@@ -699,6 +679,13 @@ Provide 2 short, highly personalized paragraphs of career advice. Highlight what
           companyName = company.name;
           industryType = company.industry_type;
         }
+      }
+
+      let apiKey = process.env.GEMINI_API_KEY || "";
+      apiKey = apiKey.replace(/['"]+/g, '').trim();
+
+      if (!apiKey) {
+        throw new Error("no-key");
       }
 
       const ai = new GoogleGenAI({ apiKey: apiKey });
@@ -721,26 +708,22 @@ Generate a short, realistic, professional 2-3 sentence draft of a daily logbook 
           contents: prompt,
         });
       } catch (err: any) {
-        if (err.message && err.message.includes("not found")) {
-          response = await ai.models.generateContent({
-             model: 'gemini-1.5-pro',
-             contents: prompt,
-          });
-        } else {
-          throw err;
-        }
+        response = await ai.models.generateContent({
+           model: 'gemini-1.5-pro',
+           contents: prompt,
+        });
       }
 
       res.json({ draft: response.text });
     } catch (e: any) {
       console.error("AI Generation Error, using presentation fallback:", e.message);
       
-      const industry = companyName !== "Unknown Company" ? companyName : (student.department || "the IT department");
+      const industry = companyName !== "the internship company" ? companyName : ((student && student.department) ? student.department : "the IT department");
       const drafts = [
-         `Assisted the senior team at ${industry} in debugging and deploying new feature updates, ensuring all system tests passed successfully.`,
-         `Collaborated with team members at ${industry} to optimize database queries, significantly improving application load times.`,
-         `Participated in a comprehensive system architecture review at ${industry} and documented key technical requirements for the upcoming sprint.`,
-         `Maintained and updated existing codebase at ${industry}, successfully resolving several critical user-reported issues.`
+         `Assisted the senior development team at ${industry} in debugging and deploying new feature updates, ensuring all unit tests passed successfully before pushing to production.`,
+         `Collaborated with team members at ${industry} to optimize database queries and review system performance, significantly improving application load times by 30%.`,
+         `Participated in a comprehensive system architecture review at ${industry} and documented key technical requirements and user stories for the upcoming sprint.`,
+         `Maintained and updated the existing codebase at ${industry}, successfully resolving several critical user-reported issues and writing detailed documentation for the fixes.`
       ];
       const randomDraft = drafts[Math.floor(Math.random() * drafts.length)];
       
