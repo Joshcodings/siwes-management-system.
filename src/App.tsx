@@ -4054,12 +4054,23 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
                 )}
               </nav>
 
-              <button
-                onClick={onLogout}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-all mt-auto cursor-pointer"
-              >
-                <LogOut size={18} /> Sign Out
-              </button>
+              <div className="pt-6 border-t border-gray-100 mt-auto">
+                <div className="flex items-center gap-3 px-4 py-2 mb-4">
+                  <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-[#5A5A40]">
+                    <UserCircle size={20} />
+                  </div>
+                  <div className="overflow-hidden">
+                    <p className="text-xs font-bold truncate">{user?.fullName || 'User'}</p>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-wider">{user.role.replace('_', ' ')}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={onLogout}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-all cursor-pointer"
+                >
+                  <LogOut size={18} /> Sign Out
+                </button>
+              </div>
             </motion.div>
           </>
         )}
@@ -4126,9 +4137,20 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
               </button>
             )}
           </nav>
-          <button onClick={onLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 mt-auto cursor-pointer">
-            <LogOut size={18} /> Sign Out
-          </button>
+          <div className="pt-6 border-t border-gray-100 mt-auto">
+            <div className="flex items-center gap-3 px-4 py-2 mb-4">
+              <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-[#5A5A40]">
+                <UserCircle size={20} />
+              </div>
+              <div className="overflow-hidden">
+                <p className="text-xs font-bold truncate">{user?.fullName || 'User'}</p>
+                <p className="text-[10px] text-gray-400 uppercase tracking-wider">{user.role.replace('_', ' ')}</p>
+              </div>
+            </div>
+            <button onClick={onLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 cursor-pointer">
+              <LogOut size={18} /> Sign Out
+            </button>
+          </div>
         </div>
 
         {/* Main Content */}
@@ -4795,9 +4817,9 @@ const SupervisorDashboard = ({ user, token, onLogout }: { user: User, token: str
     if (mRes.ok) setMemos(await mRes.json());
   };
 
-  const handleViewStudent = async (student: any) => {
+  const handleViewStudent = async (student: any, preserveTab = false) => {
     setSelectedStudent(student);
-    setActiveTab('logbooks'); // Default to logbooks when viewing a student
+    if (!preserveTab) setActiveTab('logbooks'); // Default to logbooks when viewing a student
     const headers = { 'Authorization': `Bearer ${token}` };
     const [logRes, gradeRes] = await Promise.all([
       fetch(`/api/supervisor/students/${student.id}/logbook`, { headers }),
@@ -4819,7 +4841,7 @@ const SupervisorDashboard = ({ user, token, onLogout }: { user: User, token: str
       body: JSON.stringify({ comment })
     });
     // Refresh logbook
-    if (selectedStudent) handleViewStudent(selectedStudent);
+    if (selectedStudent) handleViewStudent(selectedStudent, true);
   };
 
   const handleGrade = async (e: React.FormEvent) => {
@@ -4838,7 +4860,7 @@ const SupervisorDashboard = ({ user, token, onLogout }: { user: User, token: str
     });
     if (res.ok) {
       toast.success('Assessment saved successfully!');
-      handleViewStudent(selectedStudent);
+      handleViewStudent(selectedStudent, true);
     } else {
       const data = await res.json();
       toast.error(data.error || 'Failed to save assessment.');
