@@ -19,16 +19,27 @@ import fs from "fs";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const JWT_SECRET = process.env.JWT_SECRET || "siwes-super-secret-jwt-key-2025";
 
-// Configure nodemailer
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.example.com",
-  port: parseInt(process.env.SMTP_PORT || "587"),
-  secure: false, // true for 465, false for other ports
-  auth: {
-    user: process.env.SMTP_USER || "user@example.com",
-    pass: process.env.SMTP_PASS || "password",
-  },
-});
+// Configure nodemailer - supports Gmail via SMTP
+const transporter = nodemailer.createTransport(
+  process.env.SMTP_HOST ? {
+    host: process.env.SMTP_HOST,
+    port: parseInt(process.env.SMTP_PORT || "587"),
+    secure: process.env.SMTP_PORT === "465",
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  } : {
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER || "",
+      pass: process.env.EMAIL_PASS || "",
+    },
+  }
+);
+
+// In-memory OTP store: email -> { code, expires, data }
+const otpStore = new Map<string, { code: string; expires: number; data: any }>();
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -149,10 +160,125 @@ async function startServer() {
   }
 
   // --- AUTH ROUTES ---
+
+  // STEP 1: Send OTP to email (called when user submits registration form)
+  app.post("/api/auth/send-otp", async (req, res) => {
+    const { email, password, fullName, matNumber } = req.body;
+
+    // Validate password length
+    if (!password || password.length < 8) {
+      return res.status(400).json({ error: "Password must be at least 8 characters long." });
+    }
+
+    // Validate matric number format LCU/UG/YY/NNNNN
+    const matRegex = /^LCU\/UG\/\d{2}\/\d+$/i;
+    if (!matNumber || !matRegex.test(matNumber)) {
+      return res.status(400).json({ error: "Invalid Matriculation Number format. Expected format: LCU/UG/YY/NNNNN" });
+    }
+
+    const formattedMat = matNumber.trim().toUpperCase();
+
+    try {
+      // Check if email is already used
+      const existingEmail = await db.get("SELECT id FROM users WHERE email = ?", email);
+      if (existingEmail) {
+        return res.status(400).json({ error: "An account with this email already exists." });
+      }
+
+      // Check if matric number is already in use
+      const existingMat = await db.get("SELECT user_id FROM student_profiles WHERE mat_number = ?", formattedMat);
+      if (existingMat) {
+        return res.status(400).json({ error: `Matriculation number ${formattedMat} is already in use.` });
+      }
+
+      // Generate a 6-digit OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const expires = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+      // Store OTP and registration data
+      otpStore.set(email.toLowerCase(), { code: otp, expires, data: { email, password, fullName, matNumber: formattedMat } });
+
+      // Try to send email
+      const emailUser = process.env.EMAIL_USER || process.env.SMTP_USER || "";
+      if (emailUser) {
+        await transporter.sendMail({
+          from: `"SIWES Portal" <${emailUser}>`,
+          to: email,
+          subject: "Your SIWES Account Verification Code",
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #F5F5F0; border-radius: 16px;">
+              <div style="text-align:center; margin-bottom: 24px;">
+                <div style="display:inline-block; background: linear-gradient(135deg,#5A5A40,#8a8a60); border-radius: 14px; padding: 14px 18px;">
+                  <span style="color:white; font-size: 28px;">🎓</span>
+                </div>
+              </div>
+              <h1 style="color:#1A1A1A; font-size:22px; text-align:center; margin:0 0 8px;">SIWES Portal</h1>
+              <p style="color:#555; text-align:center; margin-bottom:28px;">Here is your email verification code</p>
+              <div style="background:white; border-radius:12px; padding:24px; text-align:center; margin-bottom:24px; box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+                <p style="color:#888; font-size:13px; margin:0 0 8px; text-transform:uppercase; letter-spacing:2px;">Your 6-Digit Code</p>
+                <div style="font-size:42px; font-weight:bold; color:#5A5A40; letter-spacing:10px; font-family:monospace;">${otp}</div>
+                <p style="color:#aaa; font-size:12px; margin:16px 0 0;">This code expires in <strong>10 minutes</strong></p>
+              </div>
+              <p style="color:#888; font-size:12px; text-align:center;">If you didn't request this, you can safely ignore this email.</p>
+            </div>
+          `
+        });
+      } else {
+        console.log(`[OTP] No email config. Code for ${email}: ${otp}`);
+      }
+
+      res.json({ success: true, message: "Verification code sent to your email." });
+    } catch (e: any) {
+      console.error("OTP send error:", e);
+      res.status(500).json({ error: "Failed to send verification email. Please try again." });
+    }
+  });
+
+  // STEP 2: Verify OTP and complete registration
+  app.post("/api/auth/verify-otp", async (req, res) => {
+    const { email, code } = req.body;
+    const key = email.toLowerCase();
+    const entry = otpStore.get(key);
+
+    if (!entry) {
+      return res.status(400).json({ error: "No verification code found. Please request a new one." });
+    }
+
+    if (Date.now() > entry.expires) {
+      otpStore.delete(key);
+      return res.status(400).json({ error: "Verification code has expired. Please register again." });
+    }
+
+    if (entry.code !== code.trim()) {
+      return res.status(400).json({ error: "Incorrect verification code. Please try again." });
+    }
+
+    // Code is valid — create the account
+    const { email: userEmail, password, fullName, matNumber } = entry.data;
+    const role = 'STUDENT';
+
+    try {
+      const hashedPassword = bcrypt.hashSync(password, 10);
+      const result = await db.run("INSERT INTO users (email, password, full_name, role) VALUES (?, ?, ?, ?)", userEmail, hashedPassword, fullName, role);
+      const userId = result.lastInsertRowid;
+      await db.run("INSERT INTO student_profiles (user_id, course, department, mat_number) VALUES (?, ?, ?, ?)", userId, "Unspecified", "Unspecified", matNumber);
+
+      otpStore.delete(key);
+      res.json({ success: true });
+    } catch (e: any) {
+      res.status(400).json({ error: e.message });
+    }
+  });
+
+  // Legacy register route (kept for admin tools, now with password length check)
   app.post("/api/auth/register", async (req, res) => {
     const { email, password, fullName, matNumber } = req.body;
-    const role = 'STUDENT'; // Force student role based on new requirement
+    const role = 'STUDENT';
     
+    if (!password || password.length < 8) {
+      return res.status(400).json({ error: "Password must be at least 8 characters long." });
+    }
+
     // Validate matric number format LCU/UG/YY/NNNNN
     const matRegex = /^LCU\/UG\/\d{2}\/\d+$/i;
     if (!matNumber || !matRegex.test(matNumber)) {
@@ -162,7 +288,6 @@ async function startServer() {
     const formattedMat = matNumber.trim().toUpperCase();
     
     try {
-      // Check if matric number is already in use
       const existingMat = await db.get("SELECT user_id FROM student_profiles WHERE mat_number = ?", formattedMat);
       if (existingMat) {
         return res.status(400).json({ error: `Matriculation number ${formattedMat} is already in use.` });

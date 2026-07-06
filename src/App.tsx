@@ -378,13 +378,14 @@ const Login = ({ onLogin }: { onLogin: (user: User, token: string) => void }) =>
   const [isRegistering, setIsRegistering] = useState(false);
   const [fullName, setFullName] = useState('');
   const [matNumber, setMatNumber] = useState('');
-  const [screen, setScreen] = useState<'login' | 'forgot' | 'reset'>('login');
+  const [screen, setScreen] = useState<'login' | 'forgot' | 'reset' | 'verify'>('login');
   const [resetEmail, setResetEmail] = useState('');
   const [resetToken, setResetToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
 
   // Check for reset token in URL
   useEffect(() => {
@@ -402,22 +403,62 @@ const Login = ({ onLogin }: { onLogin: (user: User, token: string) => void }) =>
         toast.error('Invalid Matriculation Number. Expected format: LCU/UG/YY/NNNNN (e.g. LCU/UG/22/21549)');
         return;
       }
+      if (password.length < 8) {
+        toast.error('Password must be at least 8 characters long.');
+        return;
+      }
     }
 
     setLoading(true);
-    const endpoint = isRegistering ? '/api/auth/register' : '/api/auth/login';
-    const body = isRegistering ? { email, password, fullName, matNumber } : { email, password };
+
+    if (isRegistering) {
+      // Step 1: Send OTP to verify email
+      const res = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, fullName, matNumber })
+      });
+      const data = await res.json();
+      setLoading(false);
+      if (data.success) {
+        setScreen('verify');
+        toast.success('A 6-digit verification code was sent to your email!');
+      } else {
+        toast.error(data.error || 'Something went wrong');
+      }
+      return;
+    }
+
+    const endpoint = '/api/auth/login';
+    const body = { email, password };
     const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const data = await res.json();
     setLoading(false);
     if (data.token) {
       onLogin(data.user, data.token);
-    } else if (data.success && isRegistering) {
-      setIsRegistering(false);
-      setMatNumber('');
-      toast.success('Account created! Please sign in.');
     } else {
       toast.error(data.error || 'Something went wrong');
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const res = await fetch('/api/auth/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, code: otpCode })
+    });
+    const data = await res.json();
+    setLoading(false);
+    if (data.success) {
+      setScreen('login');
+      setIsRegistering(false);
+      setMatNumber('');
+      setOtpCode('');
+      toast.success('✅ Email verified! Your account is ready. Please sign in.');
+    } else {
+      toast.error(data.error || 'Verification failed');
     }
   };
 
@@ -458,6 +499,20 @@ const Login = ({ onLogin }: { onLogin: (user: User, token: string) => void }) =>
           </div>
         )}
 
+        {screen === 'verify' && (
+          <div className="text-center mb-8">
+            <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background:'linear-gradient(135deg,#5A5A40,#8a8a60)', boxShadow:'0 10px 30px rgba(90,90,64,0.3)' }}>
+              <span className="text-white text-2xl">📧</span>
+            </div>
+            <h1 className="font-serif text-2xl font-bold text-[#1A1A1A] mb-1">Check Your Email</h1>
+            <p className="text-sm text-gray-500">We sent a 6-digit code to <strong>{email}</strong></p>
+            <form onSubmit={handleVerifyOtp} className="mt-6">
+              <input type="text" maxLength={6} value={otpCode} onChange={e => setOtpCode(e.target.value)} className="w-full text-center text-2xl tracking-[0.5em] px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#5A5A40]" required />
+              <button type="submit" disabled={loading} className="w-full mt-4 bg-[#5A5A40] text-white py-4 rounded-full font-medium hover:bg-[#4A4A30]">Verify Code</button>
+            </form>
+          </div>
+        )}
+
         {screen === 'forgot' && (
           <div>
             <h2 className="font-serif text-xl mb-2">Reset Password</h2>
@@ -475,9 +530,9 @@ const Login = ({ onLogin }: { onLogin: (user: User, token: string) => void }) =>
         {screen === 'reset' && (
           <div>
             <h2 className="font-serif text-xl mb-2">Set New Password</h2>
-            <p className="text-sm text-gray-500 mb-6">Choose a strong new password (min. 6 characters).</p>
+            <p className="text-sm text-gray-500 mb-6">Choose a strong new password (min. 8 characters).</p>
             <form onSubmit={handleResetPassword} className="space-y-4">
-              <input type="password" placeholder="New password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#5A5A40]" minLength={6} required />
+              <input type="password" placeholder="New password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#5A5A40]" minLength={8} required />
               <button type="submit" disabled={loading} className="w-full bg-[#5A5A40] text-white py-4 rounded-full font-medium hover:bg-[#4A4A30] transition-colors disabled:opacity-60">
                 {loading ? 'Saving...' : 'Update Password'}
               </button>
@@ -519,11 +574,12 @@ const Login = ({ onLogin }: { onLogin: (user: User, token: string) => void }) =>
                   )}
                 </div>
                 <div className="relative">
-                  <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-4 py-3 pr-12 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#5A5A40] transition-all" required />
+                  <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-4 py-3 pr-12 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#5A5A40] transition-all" minLength={isRegistering ? 8 : undefined} required />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
+                {isRegistering && <p className="text-xs text-gray-400 mt-1">Must be at least 8 characters</p>}
               </div>
               {!isRegistering && (
                 <div className="flex items-center justify-between">
