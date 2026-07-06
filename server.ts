@@ -470,7 +470,10 @@ async function startServer() {
         return res.json({ advice: "Please complete your profile to get personalized AI career advice." });
       }
 
-      if (!process.env.GEMINI_API_KEY) {
+      let apiKey = process.env.GEMINI_API_KEY || "";
+      apiKey = apiKey.replace(/['"]+/g, '').trim();
+
+      if (!apiKey) {
         const skillsStr = (student.skills || "").toLowerCase();
         const courseStr = (student.course || "").toLowerCase();
         
@@ -485,7 +488,7 @@ async function startServer() {
         return res.json({ advice });
       }
 
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const ai = new GoogleGenAI({ apiKey: apiKey });
       const prompt = `You are an expert career advisor for university students doing their industrial training (SIWES).
 Student Profile:
 - Course: ${student.course || 'Unknown'}
@@ -503,7 +506,7 @@ Provide 2 short, highly personalized paragraphs of career advice. Highlight what
       res.json({ advice: response.text });
     } catch (e: any) {
       console.error("AI Career Advice Error:", e);
-      res.status(500).json({ error: "Failed to generate AI advice. Please check your API key." });
+      res.status(500).json({ error: `AI Error: ${e.message}` });
     }
   });
 
@@ -643,7 +646,10 @@ Provide 2 short, highly personalized paragraphs of career advice. Highlight what
 
   app.post("/api/student/generate-logbook", authenticate, async (req: any, res) => {
     try {
-      if (!process.env.GEMINI_API_KEY) {
+      let apiKey = process.env.GEMINI_API_KEY || "";
+      apiKey = apiKey.replace(/['"]+/g, '').trim();
+
+      if (!apiKey) {
         return res.status(503).json({ error: "AI API Key not configured. Administrator needs to add GEMINI_API_KEY to the environment variables." });
       }
 
@@ -659,7 +665,7 @@ Provide 2 short, highly personalized paragraphs of career advice. Highlight what
         }
       }
 
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const ai = new GoogleGenAI({ apiKey: apiKey });
       
       const prompt = `You are an AI assistant helping a university student write their daily SIWES (industrial training) logbook entry.
 Student Profile:
@@ -680,7 +686,7 @@ Generate a short, realistic, professional 2-3 sentence draft of a daily logbook 
       res.json({ draft: response.text });
     } catch (e: any) {
       console.error("AI Generation Error:", e);
-      res.status(500).json({ error: "Failed to generate AI draft. Please try again." });
+      res.status(500).json({ error: `AI Error: ${e.message}` });
     }
   });
 

@@ -1136,10 +1136,10 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
     setShowCareerAdvice(true);
     try {
       const res = await fetch('/api/student/career-advice', { headers: { 'Authorization': `Bearer ${token}` } });
-      if (!res.ok) {
-        throw new Error(`Server returned ${res.status}: Backend may need restarting.`);
-      }
       const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || `Server returned ${res.status}: Backend may need restarting.`);
+      }
       setCareerAdvice(data.advice);
     } catch (err: any) {
       console.error(err);
