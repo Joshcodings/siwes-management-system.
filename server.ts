@@ -498,10 +498,22 @@ Student Profile:
 
 Provide 2 short, highly personalized paragraphs of career advice. Highlight what kind of companies they should target and how they can best leverage their specific skills in the industry. Use markdown formatting like bolding.`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-1.5-flash',
-        contents: prompt,
-      });
+      let response;
+      try {
+        response = await ai.models.generateContent({
+          model: 'gemini-1.5-flash',
+          contents: prompt,
+        });
+      } catch (err: any) {
+        if (err.message && err.message.includes("not found")) {
+          response = await ai.models.generateContent({
+             model: 'gemini-1.5-pro',
+             contents: prompt,
+          });
+        } else {
+          throw err;
+        }
+      }
 
       res.json({ advice: response.text });
     } catch (e: any) {
@@ -697,10 +709,22 @@ Internship Details:
 
 Generate a short, realistic, professional 2-3 sentence draft of a daily logbook activity they might have done today. Make it highly specific to their field of study and industry. Do not include any greeting, quotation marks, or conversational filler. Just return the pure text draft. Write it in the first person ("Assisted in...", "Participated in...").`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-1.5-flash',
-        contents: prompt,
-      });
+      let response;
+      try {
+        response = await ai.models.generateContent({
+          model: 'gemini-1.5-flash',
+          contents: prompt,
+        });
+      } catch (err: any) {
+        if (err.message && err.message.includes("not found")) {
+          response = await ai.models.generateContent({
+             model: 'gemini-1.5-pro',
+             contents: prompt,
+          });
+        } else {
+          throw err;
+        }
+      }
 
       res.json({ draft: response.text });
     } catch (e: any) {
