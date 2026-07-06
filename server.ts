@@ -198,31 +198,36 @@ async function startServer() {
       // Store OTP and registration data
       otpStore.set(email.toLowerCase(), { code: otp, expires, data: { email, password, fullName, matNumber: formattedMat } });
 
-      // Try to send email
+      // Try to send email — failure here should NOT block registration
       const emailUser = process.env.EMAIL_USER || process.env.SMTP_USER || "";
       if (emailUser) {
-        await transporter.sendMail({
-          from: `"SIWES Portal" <${emailUser}>`,
-          to: email,
-          subject: "Your SIWES Account Verification Code",
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #F5F5F0; border-radius: 16px;">
-              <div style="text-align:center; margin-bottom: 24px;">
-                <div style="display:inline-block; background: linear-gradient(135deg,#5A5A40,#8a8a60); border-radius: 14px; padding: 14px 18px;">
-                  <span style="color:white; font-size: 28px;">🎓</span>
+        try {
+          await transporter.sendMail({
+            from: `"SIWES Portal" <${emailUser}>`,
+            to: email,
+            subject: "Your SIWES Account Verification Code",
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #F5F5F0; border-radius: 16px;">
+                <div style="text-align:center; margin-bottom: 24px;">
+                  <div style="display:inline-block; background: linear-gradient(135deg,#5A5A40,#8a8a60); border-radius: 14px; padding: 14px 18px;">
+                    <span style="color:white; font-size: 28px;">🎓</span>
+                  </div>
                 </div>
+                <h1 style="color:#1A1A1A; font-size:22px; text-align:center; margin:0 0 8px;">SIWES Portal</h1>
+                <p style="color:#555; text-align:center; margin-bottom:28px;">Here is your email verification code</p>
+                <div style="background:white; border-radius:12px; padding:24px; text-align:center; margin-bottom:24px; box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+                  <p style="color:#888; font-size:13px; margin:0 0 8px; text-transform:uppercase; letter-spacing:2px;">Your 6-Digit Code</p>
+                  <div style="font-size:42px; font-weight:bold; color:#5A5A40; letter-spacing:10px; font-family:monospace;">${otp}</div>
+                  <p style="color:#aaa; font-size:12px; margin:16px 0 0;">This code expires in <strong>10 minutes</strong></p>
+                </div>
+                <p style="color:#888; font-size:12px; text-align:center;">If you didn't request this, you can safely ignore this email.</p>
               </div>
-              <h1 style="color:#1A1A1A; font-size:22px; text-align:center; margin:0 0 8px;">SIWES Portal</h1>
-              <p style="color:#555; text-align:center; margin-bottom:28px;">Here is your email verification code</p>
-              <div style="background:white; border-radius:12px; padding:24px; text-align:center; margin-bottom:24px; box-shadow:0 2px 8px rgba(0,0,0,0.06);">
-                <p style="color:#888; font-size:13px; margin:0 0 8px; text-transform:uppercase; letter-spacing:2px;">Your 6-Digit Code</p>
-                <div style="font-size:42px; font-weight:bold; color:#5A5A40; letter-spacing:10px; font-family:monospace;">${otp}</div>
-                <p style="color:#aaa; font-size:12px; margin:16px 0 0;">This code expires in <strong>10 minutes</strong></p>
-              </div>
-              <p style="color:#888; font-size:12px; text-align:center;">If you didn't request this, you can safely ignore this email.</p>
-            </div>
-          `
-        });
+            `
+          });
+          console.log(`[OTP] Email sent to ${email}`);
+        } catch (emailErr: any) {
+          console.error(`[OTP] Email send failed, but OTP still stored. Code for ${email}: ${otp}`, emailErr.message);
+        }
       } else {
         console.log(`[OTP] No email config. Code for ${email}: ${otp}`);
       }
@@ -230,7 +235,7 @@ async function startServer() {
       res.json({ success: true, message: "Verification code sent to your email." });
     } catch (e: any) {
       console.error("OTP send error:", e);
-      res.status(500).json({ error: "Failed to send verification email. Please try again." });
+      res.status(500).json({ error: "Something went wrong. Please try again." });
     }
   });
 
