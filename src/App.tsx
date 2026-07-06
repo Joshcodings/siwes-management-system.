@@ -4777,7 +4777,7 @@ const SupervisorDashboard = ({ user, token, onLogout }: { user: User, token: str
   const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
   const [studentLogs, setStudentLogs] = useState<any[]>([]);
   const [studentAssessment, setStudentAssessment] = useState<any>({});
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'students' | 'logbooks' | 'assessments' | 'memos'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'students' | 'logbooks' | 'assessments' | 'memos' | 'location'>('dashboard');
   const [assessmentForm, setAssessmentForm] = useState({ grade: '', remarks: '' });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -4926,6 +4926,12 @@ const SupervisorDashboard = ({ user, token, onLogout }: { user: User, token: str
                 >
                   <AlertCircle size={18} /> Memos & Broadcasts
                 </button>
+                <button
+                  onClick={() => { setSelectedStudent(null); setActiveTab('location'); setIsMobileMenuOpen(false); }}
+                  className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === 'location' ? 'bg-[#5A5A40] text-white shadow-lg shadow-[#5A5A40]/20' : 'text-gray-500 hover:bg-gray-50'}`}
+                >
+                  <MapPin size={18} /> Location Tracking
+                </button>
               </nav>
 
               <div className="pt-6 border-t border-gray-100 mt-auto">
@@ -4992,6 +4998,12 @@ const SupervisorDashboard = ({ user, token, onLogout }: { user: User, token: str
             >
               <AlertCircle size={18} /> Memos & Broadcasts
             </button>
+            <button
+              onClick={() => { setSelectedStudent(null); setActiveTab('location'); }}
+              className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === 'location' ? 'bg-[#5A5A40] text-white shadow-lg shadow-[#5A5A40]/20' : 'text-gray-500 hover:bg-gray-50'}`}
+            >
+              <MapPin size={18} /> Location Tracking
+            </button>
           </nav>
           <div className="pt-6 border-t border-gray-100">
             <div className="flex items-center gap-3 px-4 py-2 mb-4">
@@ -5014,6 +5026,82 @@ const SupervisorDashboard = ({ user, token, onLogout }: { user: User, token: str
 
       <main className="flex-1 p-4 md:p-10 overflow-y-auto overflow-x-hidden min-h-0 min-w-0 w-full">
         <AnimatePresence mode="wait">
+          {activeTab === 'location' && (
+            <motion.div
+              key="location"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-6"
+            >
+              <header>
+                <h1 className="text-2xl md:text-3xl font-serif font-medium text-[#1A1A1A]">Location Tracking</h1>
+                <p className="text-gray-500 mt-1">Track your assigned students' locations and geofence status.</p>
+              </header>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {students.map((s: any, i: number) => (
+                  <div key={i} className="bg-white p-5 rounded-2xl border border-black/5 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-4 mb-4 pb-4 border-b border-gray-50">
+                      <div className="w-10 h-10 rounded-full bg-[#5A5A40]/10 flex items-center justify-center text-[#5A5A40] font-bold text-lg flex-shrink-0">
+                        {s.full_name?.charAt(0)?.toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-semibold text-gray-900 truncate">{s.full_name}</h3>
+                        <p className="text-xs text-gray-500 truncate">{s.assigned_company_name || 'No company assigned'}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      {s.latest_log_lat && s.latest_log_lon ? (
+                        <div>
+                          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1 flex items-center gap-1"><MapPin size={12}/> Last Logbook Clock-in</p>
+                          <p className="text-xs text-gray-700 font-mono bg-gray-50 p-2 rounded-lg">
+                            Lat: {parseFloat(s.latest_log_lat).toFixed(5)}<br/>
+                            Lon: {parseFloat(s.latest_log_lon).toFixed(5)}
+                          </p>
+                          <p className="text-[10px] text-gray-400 mt-1">Logged on: {new Date(s.latest_log_date).toLocaleDateString()}</p>
+                          <a 
+                            href={`https://maps.google.com/?q=${s.latest_log_lat},${s.latest_log_lon}`}
+                            target="_blank" rel="noreferrer"
+                            className="inline-block mt-3 text-xs bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-100 font-medium transition-colors w-full text-center"
+                          >
+                            View on Google Maps
+                          </a>
+                        </div>
+                      ) : s.internship_latitude && s.internship_longitude ? (
+                        <div>
+                          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1 flex items-center gap-1"><MapPin size={12}/> Registered Workplace</p>
+                          <p className="text-xs text-gray-700 font-mono bg-gray-50 p-2 rounded-lg">
+                            Lat: {parseFloat(s.internship_latitude).toFixed(5)}<br/>
+                            Lon: {parseFloat(s.internship_longitude).toFixed(5)}
+                          </p>
+                          <a 
+                            href={`https://maps.google.com/?q=${s.internship_latitude},${s.internship_longitude}`}
+                            target="_blank" rel="noreferrer"
+                            className="inline-block mt-3 text-xs bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-100 font-medium transition-colors w-full text-center"
+                          >
+                            View on Google Maps
+                          </a>
+                        </div>
+                      ) : (
+                        <div className="py-4 text-center">
+                          <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg inline-block">No location data available yet</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {students.length === 0 && (
+                  <div className="col-span-full py-10 text-center text-gray-400 bg-white rounded-2xl border border-black/5 shadow-sm">
+                    <MapPin size={32} className="mx-auto mb-2 text-gray-200" />
+                    <p className="text-sm">No students assigned to track.</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+
           {activeTab === 'dashboard' && (
             <motion.div
               key="dashboard"

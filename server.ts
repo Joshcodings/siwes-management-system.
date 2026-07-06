@@ -1303,12 +1303,25 @@ Generate a short, realistic, professional 2-3 sentence draft of a daily logbook 
       const students = await db.all(`
         SELECT u.id, u.full_name, u.email, sp.course, sp.department,
                sp.school_supervisor_id, sp.assigned_company_id, sp.mat_number,
-               c.name as assigned_company_name
+               sp.internship_latitude, sp.internship_longitude,
+               c.name as assigned_company_name, c.address as company_address,
+               c.latitude as company_lat, c.longitude as company_lon
         FROM users u 
         JOIN student_profiles sp ON u.id = sp.user_id 
         LEFT JOIN companies c ON sp.assigned_company_id = c.id
         WHERE sp.school_supervisor_id = ?
       `, req.user.id);
+      
+      // Also get their latest logbook entry for last known location
+      for (const student of students) {
+        const latestLog = await db.get("SELECT latitude, longitude, date FROM logbook_entries WHERE student_id = ? AND latitude IS NOT NULL ORDER BY date DESC LIMIT 1", student.id);
+        if (latestLog) {
+          student.latest_log_lat = latestLog.latitude;
+          student.latest_log_lon = latestLog.longitude;
+          student.latest_log_date = latestLog.date;
+        }
+      }
+
       res.json(students);
     } catch (e: any) {
       res.status(500).json({ error: e.message });
