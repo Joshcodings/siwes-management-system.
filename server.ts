@@ -510,6 +510,25 @@ Provide 2 short, highly personalized paragraphs of career advice. Highlight what
     }
   });
 
+  app.get("/api/debug-ai-key", (req, res) => {
+    let key = process.env.GEMINI_API_KEY || "";
+    if (!key) return res.json({ status: "Missing", message: "GEMINI_API_KEY is completely empty or not set in Environment Variables." });
+    
+    let originalLength = key.length;
+    let cleanedKey = key.replace(/['"]+/g, '').trim();
+    let cleanedLength = cleanedKey.length;
+    
+    res.json({
+      status: "Present",
+      original_length: originalLength,
+      cleaned_length: cleanedLength,
+      starts_with: cleanedKey.substring(0, 6),
+      ends_with: cleanedKey.substring(cleanedKey.length - 4),
+      is_valid_length: cleanedLength === 39,
+      looks_like_google_key: cleanedKey.startsWith("AIza")
+    });
+  });
+
   // --- APPLICATIONS ---
   app.post("/api/student/apply", authenticate, async (req: any, res) => {
     const { company_id, score, score_breakdown, custom_company } = req.body;
