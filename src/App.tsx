@@ -4661,6 +4661,20 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
                   {systemSettings.length === 0 ? (
                     <div className="space-y-6">
                       <div>
+                        <label className="block text-xs font-bold uppercase text-gray-400 mb-1">GOOGLE GEMINI API KEY</label>
+                        <p className="text-xs text-gray-500 mb-2">Live AI API key for career advice and logbook draft generation.</p>
+                        <div className="flex gap-2">
+                          <input type="password" placeholder="AIzaSy..." id="setting_gemini_key" className="border border-gray-200 rounded-xl px-4 py-2 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-[#5A5A40] font-mono" />
+                          <button onClick={() => {
+                            const val = (document.getElementById('setting_gemini_key') as HTMLInputElement)?.value || '';
+                            handleUpdateSetting('GEMINI_API_KEY', val);
+                          }} className="bg-[#5A5A40] text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-[#4A4A30] transition-colors">
+                            Save
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
                         <label className="block text-xs font-bold uppercase text-gray-400 mb-1">GEOFENCE RADIUS (Meters)</label>
                         <p className="text-xs text-gray-500 mb-2">Maximum allowed distance from company workplace for log verification.</p>
                         <div className="flex gap-2">

@@ -592,6 +592,40 @@ async function startServer() {
     }
   });
 
+  // --- HELPER FOR GEMINI AI ---
+  async function getGeminiApiKey() {
+    let apiKey = process.env.GEMINI_API_KEY || "";
+    apiKey = apiKey.replace(/['"]+/g, '').trim();
+    if (!apiKey) {
+      try {
+        const dbKey = await db.get("SELECT value FROM system_settings WHERE key = 'GEMINI_API_KEY'");
+        if (dbKey && dbKey.value) {
+          apiKey = dbKey.value.replace(/['"]+/g, '').trim();
+        }
+      } catch (e) {}
+    }
+    return apiKey;
+  }
+
+  async function callGeminiAI(apiKey: string, prompt: string) {
+    const ai = new GoogleGenAI({ apiKey });
+    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+    let lastErr: any = null;
+    for (const model of modelsToTry) {
+      try {
+        const response = await ai.models.generateContent({
+          model,
+          contents: prompt,
+        });
+        const text = response?.text || (response?.candidates?.[0]?.content?.parts?.[0]?.text) || "";
+        if (text) return text;
+      } catch (err) {
+        lastErr = err;
+      }
+    }
+    throw lastErr || new Error("Unable to obtain text from Gemini AI");
+  }
+
   // --- AI CAREER ADVICE ---
   app.get("/api/student/career-advice", authenticate, async (req: any, res) => {
     let student: any = null;
@@ -601,14 +635,9 @@ async function startServer() {
         return res.json({ advice: "Please complete your profile to get personalized AI career advice." });
       }
 
-      let apiKey = process.env.GEMINI_API_KEY || "";
-      apiKey = apiKey.replace(/['"]+/g, '').trim();
+      const apiKey = await getGeminiApiKey();
+      if (!apiKey) throw new Error("no-key");
 
-      if (!apiKey) {
-        throw new Error("no-key");
-      }
-
-      const ai = new GoogleGenAI({ apiKey: apiKey });
       const prompt = `You are an expert career advisor for university students doing their industrial training (SIWES).
 Student Profile:
 - Course: ${student.course || 'Unknown'}
@@ -618,22 +647,8 @@ Student Profile:
 
 Provide 2 short, highly personalized paragraphs of career advice. Highlight what kind of companies they should target and how they can best leverage their specific skills in the industry. Use markdown formatting like bolding.`;
 
-      let response;
-      try {
-        response = await ai.models.generateContent({
-          model: 'gemini-1.5-flash',
-          contents: prompt,
-        });
-      } catch (err: any) {
-        response = await ai.models.generateContent({
-           model: 'gemini-1.5-pro',
-           contents: prompt,
-        });
-      }
-
-      const text = response?.text || (response?.candidates?.[0]?.content?.parts?.[0]?.text) || "";
-      if (!text) throw new Error("Empty response from AI model");
-      res.json({ advice: text });
+      const adviceText = await callGeminiAI(apiKey, prompt);
+      res.json({ advice: adviceText });
     } catch (e: any) {
       console.error("AI Career Advice Error, using presentation fallback:", e.message);
       
@@ -645,9 +660,9 @@ Provide 2 short, highly personalized paragraphs of career advice. Highlight what
     }
   });
 
-  app.get("/api/debug-ai-key", (req, res) => {
-    let key = process.env.GEMINI_API_KEY || "";
-    if (!key) return res.json({ status: "Missing", message: "GEMINI_API_KEY is completely empty or not set in Environment Variables." });
+  app.get("/api/debug-ai-key", async (req, res) => {
+    let key = await getGeminiApiKey();
+    if (!key) return res.json({ status: "Missing", message: "GEMINI_API_KEY is not set in Environment Variables or System Settings database." });
     
     let originalLength = key.length;
     let cleanedKey = key.replace(/['"]+/g, '').trim();
@@ -659,7 +674,7 @@ Provide 2 short, highly personalized paragraphs of career advice. Highlight what
       cleaned_length: cleanedLength,
       starts_with: cleanedKey.substring(0, 6),
       ends_with: cleanedKey.substring(cleanedKey.length - 4),
-      is_valid_length: cleanedLength === 39,
+      is_valid_length: cleanedLength >= 35,
       looks_like_google_key: cleanedKey.startsWith("AIza")
     });
   });
@@ -816,15 +831,9 @@ Provide 2 short, highly personalized paragraphs of career advice. Highlight what
         }
       }
 
-      let apiKey = process.env.GEMINI_API_KEY || "";
-      apiKey = apiKey.replace(/['"]+/g, '').trim();
+      const apiKey = await getGeminiApiKey();
+      if (!apiKey) throw new Error("no-key");
 
-      if (!apiKey) {
-        throw new Error("no-key");
-      }
-
-      const ai = new GoogleGenAI({ apiKey: apiKey });
-      
       const prompt = `You are an AI assistant helping a university student write their daily SIWES (industrial training) logbook entry.
 Student Profile:
 - Course: ${student?.course || 'Unknown'}
@@ -836,22 +845,8 @@ Internship Details:
 
 Generate a short, realistic, professional 2-3 sentence draft of a daily logbook activity they might have done today. Make it highly specific to their field of study and industry. Do not include any greeting, quotation marks, or conversational filler. Just return the pure text draft. Write it in the first person ("Assisted in...", "Participated in...").`;
 
-      let response;
-      try {
-        response = await ai.models.generateContent({
-          model: 'gemini-1.5-flash',
-          contents: prompt,
-        });
-      } catch (err: any) {
-        response = await ai.models.generateContent({
-           model: 'gemini-1.5-pro',
-           contents: prompt,
-        });
-      }
-
-      const text = response?.text || (response?.candidates?.[0]?.content?.parts?.[0]?.text) || "";
-      if (!text) throw new Error("Empty response from AI model");
-      res.json({ draft: text });
+      const draftText = await callGeminiAI(apiKey, prompt);
+      res.json({ draft: draftText });
     } catch (e: any) {
       console.error("AI Generation Error, using presentation fallback:", e.message);
       
