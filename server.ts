@@ -631,7 +631,9 @@ Provide 2 short, highly personalized paragraphs of career advice. Highlight what
         });
       }
 
-      res.json({ advice: response.text });
+      const text = response?.text || (response?.candidates?.[0]?.content?.parts?.[0]?.text) || "";
+      if (!text) throw new Error("Empty response from AI model");
+      res.json({ advice: text });
     } catch (e: any) {
       console.error("AI Career Advice Error, using presentation fallback:", e.message);
       
@@ -750,6 +752,9 @@ Provide 2 short, highly personalized paragraphs of career advice. Highlight what
 
   app.post("/api/student/register-workplace", authenticate, async (req: any, res) => {
     const { latitude, longitude } = req.body;
+    if (latitude == null || longitude == null || isNaN(Number(latitude)) || isNaN(Number(longitude))) {
+      return res.status(400).json({ error: "Valid latitude and longitude coordinates are required." });
+    }
     const userId = req.user.id;
     try {
       const profile = await db.get("SELECT * FROM student_profiles WHERE user_id = ?", userId);
@@ -844,7 +849,9 @@ Generate a short, realistic, professional 2-3 sentence draft of a daily logbook 
         });
       }
 
-      res.json({ draft: response.text });
+      const text = response?.text || (response?.candidates?.[0]?.content?.parts?.[0]?.text) || "";
+      if (!text) throw new Error("Empty response from AI model");
+      res.json({ draft: text });
     } catch (e: any) {
       console.error("AI Generation Error, using presentation fallback:", e.message);
       
@@ -864,6 +871,9 @@ Generate a short, realistic, professional 2-3 sentence draft of a daily logbook 
   app.post("/api/logbook", authenticate, async (req: any, res) => {
     const { activity_description, latitude, longitude, accuracy, date, attachment_url } = req.body;
     try {
+      if (latitude == null || longitude == null || isNaN(Number(latitude)) || isNaN(Number(longitude))) {
+        return res.status(400).json({ error: "Valid GPS coordinates (latitude and longitude) are required to submit logbook entries." });
+      }
       const student: any = await db.get("SELECT * FROM student_profiles WHERE user_id = ?", req.user.id);
 
       // 1. Time Travel Validation (Block Future Dates)

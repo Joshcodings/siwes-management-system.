@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIWES System Architecture</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 24px;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 6px;
+      letter-spacing: -0.3px;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 36px;
+    }
+
+    .diagram-wrapper {
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+      max-width: 1180px;
+      width: 100%;
+    }
+
+    /* ========== PROCEDURE BOXES ========== */
+    .procedure-box {
+      border-radius: 14px;
+      padding: 24px;
+      position: relative;
+      flex: 1;
+    }
+
+    .procedure-box.left {
+      background: rgba(230, 225, 255, 0.4);
+      border: 1.5px dashed #9d8ec9;
+      min-width: 380px;
+    }
+
+    .procedure-box.right {
+      background: rgba(210, 235, 255, 0.4);
+      border: 1.5px dashed #6aace0;
+      min-width: 520px;
+    }
+
+    .procedure-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: #555;
+      letter-spacing: 0.3px;
+      margin-bottom: 28px;
+    }
+
+    /* ========== NODES ========== */
+    .node-circle {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid #bbb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 500;
+      color: #333;
+      line-height: 1.4;
+      padding: 10px;
+      position: relative;
+      z-index: 2;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+
+    .node-circle.purple { border-color: #9b59b6; color: #6c3483; }
+    .node-circle.green  { border-color: #27ae60; color: #1e8449; }
+    .node-circle.orange { border-color: #e67e22; }
+
+    .node-rect {
+      border-radius: 8px;
+      background: #fff;
+      border: 2px solid #3498db;
+      padding: 10px 16px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #1a5276;
+      text-align: center;
+      line-height: 1.5;
+      position: relative;
+      z-index: 2;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+
+    .node-rect.green  { border-color: #27ae60; color: #1e6b3b; }
+    .node-rect.orange { border-color: #e67e22; color: #784212; }
+
+    /* ========== CYLINDER (DB) ========== */
+    .node-db {
+      position: relative;
+      width: 130px;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 2;
+    }
+
+    .db-top, .db-bottom {
+      width: 130px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid #e67e22;
+    }
+    .db-body {
+      width: 130px;
+      background: #fff;
+      border-left: 2px solid #e67e22;
+      border-right: 2px solid #e67e22;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: #784212;
+      text-align: center;
+      padding: 8px 10px;
+      line-height: 1.4;
+    }
+    .db-bottom { margin-top: -1px; }
+
+    /* ========== ARROWS ========== */
+    .arrow-label {
+      font-size: 9.5px;
+      color: #444;
+      font-weight: 500;
+      background: transparent;
+      letter-spacing: 0.1px;
+    }
+
+    .left-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+
+    .arrow-v {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      width: 100%;
+      padding: 6px 0 6px 20px;
+      position: relative;
+    }
+    .arrow-v::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 1.5px;
+      background: #888;
+    }
+    .arrow-v::after {
+      content: '▼';
+      position: absolute;
+      left: calc(50% - 5px);
+      bottom: -2px;
+      font-size: 10px;
+      color: #888;
+    }
+
+    /* ========== LAYOUT HELPERS ========== */
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      position: relative;
+      width: 100%;
+    }
+
+    .col-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    svg.arrows {
+      overflow: visible;
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* cross-box connector line */
+    .cross-line {
+      height: 2px;
+      background: #888;
+      position: absolute;
+      top: 50%;
+    }
+
+    /* ========== RIGHT BOX GRID ========== */
+    .right-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto auto auto;
+      gap: 16px 20px;
+      position: relative;
+    }
+
+    .span2 { grid-column: 1 / 3; display: flex; justify-content: center; }
+
+    /* ========== LEGEND ========== */
+    .legend {
+      display: flex;
+      gap: 20px;
+      margin-top: 28px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11.5px;
+      color: #555;
+    }
+    .legend-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      border: 2px solid;
+    }
+
+    /* ========= TECH BADGES ========= */
+    .tech-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 28px;
+      max-width: 900px;
+    }
+    .badge {
+      background: #fff;
+      border: 1.5px solid #ddd;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 11px;
+      color: #444;
+      font-weight: 500;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+  </style>
+</head>
+<body>
+
+  <h1>AI-Powered SIWES Management System</h1>
+  <p class="subtitle">System Architecture · Data Flow Diagram</p>
+
+  <div style="display: flex; gap: 28px; align-items: flex-start; max-width: 1180px; width: 100%; flex-wrap: wrap;">
+
+    <!-- ===== LEFT BOX: Auth + Profile + Recommendations ===== -->
+    <div class="procedure-box left" style="flex: 0 0 340px;">
+      <div class="procedure-title">Procedure 1 &amp; 2: Authentication, Profile &amp; AI Recommendations</div>
+
+      <div class="col-center" style="gap:0;">
+
+        <!-- User Circle -->
+        <div class="node-circle" style="width:120px;height:120px;">
+          Student /<br/>Supervisor /<br/>Admin
+        </div>
+
+        <!-- Arrow down + label -->
+        <div style="display:flex;align-items:flex-start;gap:8px;width:100%;padding:6px 0;">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;">
+            <div class="arrow-label" style="align-self:flex-start;padding-left:30px;">1. Login / Register</div>
+            <div style="width:1.5px;height:22px;background:#888;margin:2px 0;"></div>
+            <div style="font-size:12px;color:#888;margin-top:-4px;">▼</div>
+          </div>
+          <div style="flex:1;display:flex;align-items:center;padding-top:22px;">
+            <div class="arrow-label" style="font-size:9px;color:#777;">C. Requests Career Advice ↗</div>
+          </div>
+        </div>
+
+        <!-- React UI Box -->
+        <div class="node-rect" style="width:220px;">
+          React (Vite): Course UI<br/>&amp; Student Dashboard
+        </div>
+
+        <!-- Arrow down -->
+        <div style="width:100%;display:flex;gap:8px;padding:6px 0;">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;">
+            <div class="arrow-label" style="align-self:flex-start;padding-left:8px;">2. POST /api/auth · Auth JWT</div>
+            <div style="width:1.5px;height:22px;background:#888;margin:2px 0;"></div>
+            <div style="font-size:12px;color:#888;margin-top:-4px;">▼</div>
+          </div>
+          <div style="flex:1;display:flex;align-items:center;padding-top:14px;">
+            <div class="arrow-label" style="font-size:9px;">5. State Update / Module Unlock ↙</div>
+          </div>
+        </div>
+
+        <!-- Express REST Controller -->
+        <div class="node-rect green" style="width:240px;">
+          Express.js: REST Controller<br/>
+          <span style="font-weight:400;font-size:9.5px;">Helmet · CORS · JWT · Multer · Nodemailer</span>
+        </div>
+
+        <!-- Arrow down -->
+        <div style="width:100%;display:flex;gap:8px;padding:6px 0;">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;">
+            <div class="arrow-label" style="align-self:flex-start;padding-left:8px;">3. Query Placement / Threshold</div>
+            <div style="width:1.5px;height:22px;background:#888;margin:2px 0;"></div>
+            <div style="font-size:12px;color:#888;margin-top:-4px;">▼</div>
+          </div>
+          <div style="flex:1;display:flex;align-items:center;padding-top:14px;">
+            <div class="arrow-label" style="font-size:9px;">4. Return Boolean / Profile State ↙</div>
+          </div>
+        </div>
+
+        <!-- SQLite DB -->
+        <div class="node-db">
+          <div class="db-top"></div>
+          <div class="db-body">SQLite Database<br/>(better-sqlite3)</div>
+          <div class="db-bottom"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CROSS-BOX arrow area (text between boxes) -->
+    <div style="display:flex;align-items:center;padding-top:180px;flex-direction:column;gap:8px;min-width:32px;">
+      <div style="writing-mode:vertical-rl;font-size:10px;color:#888;transform:rotate(180deg);">⟶</div>
+    </div>
+
+    <!-- ===== RIGHT BOX: AI Scoring, Geofencing, Career Advice ===== -->
+    <div class="procedure-box right" style="flex: 1; min-width: 480px;">
+      <div class="procedure-title">Procedure 3 &amp; 4: AI Scoring, Geofencing &amp; Career Intelligence</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px 24px;position:relative;">
+
+        <!-- Row 1: GPS circle | React Leaflet Map -->
+        <div style="display:flex;justify-content:flex-end;align-items:center;">
+          <div class="node-circle purple" style="width:100px;height:100px;font-size:10.5px;">
+            Browser<br/>GPS /&nbsp;Geolocation<br/>API
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-start;align-items:center;">
+          <div class="node-rect" style="max-width:190px;">
+            React: Map &amp; Logbook<br/>Interface (Leaflet)
+          </div>
+        </div>
+
+        <!-- Row 2: Arrows -->
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+          <div class="arrow-label">A. Stream GPS Coords &amp; OHLCV</div>
+          <div style="font-size:12px;color:#888;">↓</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+          <div class="arrow-label">D. Send Profile for Scoring</div>
+          <div style="font-size:12px;color:#888;">↓</div>
+          <div style="font-size:9px;color:#888;text-align:center;">B. Broadcast via Email (Nodemailer)</div>
+          <div style="font-size:12px;color:#888;">↕</div>
+          <div class="arrow-label" style="font-size:9px;">G. Return AI Recommendation</div>
+        </div>
+
+        <!-- Row 3: Center - Express Gateway (span 2) -->
+        <div style="grid-column:1/3;display:flex;justify-content:center;">
+          <div class="node-rect green" style="width:280px;">
+            Express.js: Gateway &amp; AI Service<br/>
+            <span style="font-weight:400;font-size:9.5px;">Geofencing · Scoring · Rate Limit · File Upload</span>
+          </div>
+        </div>
+
+        <!-- Row 4: arrows to Python and SQLite -->
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+          <div style="font-size:12px;color:#888;">↓</div>
+          <div class="arrow-label">F. Python Subprocess</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+          <div style="font-size:12px;color:#888;">↓</div>
+          <div class="arrow-label">E. Score &amp; Match Query</div>
+        </div>
+
+        <!-- Row 5: Python AI engine | SQLite -->
+        <div style="display:flex;justify-content:center;align-items:flex-end;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+            <div class="node-circle green" style="width:105px;height:105px;font-size:10.5px;">
+              Python<br/>AI Engine<br/>(ai_engine.py)
+            </div>
+            <!-- Gemini bubble -->
+            <div style="display:flex;align-items:center;gap:6px;">
+              <div style="width:1.5px;height:18px;background:#888;"></div>
+            </div>
+            <div class="node-circle purple" style="width:95px;height:95px;font-size:10px;">
+              Google Gemini<br/>API<br/>(@google/genai)
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:center;align-items:center;">
+          <div class="node-db">
+            <div class="db-top"></div>
+            <div class="db-body">SQLite: companies<br/>&amp; student_profiles<br/><span style="font-size:9px;font-weight:400;">pgvector-style scoring</span></div>
+            <div class="db-bottom"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Tech Stack Legend -->
+  <div class="tech-badges">
+    <span class="badge">⚛️ React 19 + Vite</span>
+    <span class="badge">🎨 TailwindCSS 4</span>
+    <span class="badge">🗺️ Leaflet + react-leaflet</span>
+    <span class="badge">🟢 Express.js (TypeScript)</span>
+    <span class="badge">🔑 JWT + bcryptjs</span>
+    <span class="badge">🗃️ SQLite (better-sqlite3)</span>
+    <span class="badge">🐍 Python AI Engine</span>
+    <span class="badge">🤖 @google/genai (Gemini)</span>
+    <span class="badge">📁 Multer (File Uploads)</span>
+    <span class="badge">📧 Nodemailer (SMTP)</span>
+    <span class="badge">🛡️ Helmet + CORS + Rate Limit</span>
+    <span class="badge">📄 jsPDF + AutoTable</span>
+    <span class="badge">🎞️ Motion (Framer)</span>
+  </div>
+
+  <!-- Color Legend -->
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-dot" style="border-color:#3498db;background:#e8f4fd;"></div>
+      Frontend / UI Layer
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="border-color:#27ae60;background:#eafaf1;"></div>
+      Backend / API Layer
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="border-color:#e67e22;background:#fef5e7;"></div>
+      Database Layer
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="border-color:#9b59b6;background:#f5eef8;"></div>
+      External Service / AI
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="border-color:#bbb;background:#f8f9fa;"></div>
+      User / Actor
+    </div>
+  </div>
+
+</body>
+</html>

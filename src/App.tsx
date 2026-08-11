@@ -63,6 +63,26 @@ const getLocalDateString = (d: Date = new Date()) => {
   return `${year}-${month}-${day}`;
 };
 
+const calculateStreak = (logbook: any[]) => {
+  if (!logbook || logbook.length === 0) return 0;
+  const dates = new Set(logbook.map((l: any) => l.date ? String(l.date).substring(0, 10) : ''));
+  let streak = 0;
+  let curr = new Date();
+  let currStr = getLocalDateString(curr);
+  
+  if (!dates.has(currStr)) {
+    curr.setDate(curr.getDate() - 1);
+    currStr = getLocalDateString(curr);
+  }
+  
+  while (dates.has(currStr)) {
+    streak++;
+    curr.setDate(curr.getDate() - 1);
+    currStr = getLocalDateString(curr);
+  }
+  return streak;
+};
+
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 // Fix for default marker icons in react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -1022,18 +1042,22 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
     try {
       const res = await fetch('/api/student/generate-logbook', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        }
       });
-      const data = await res.json();
+      const text = await res.text();
+      let data: any = {};
+      try { data = JSON.parse(text); } catch (_) {}
+      
       if (res.ok && data.draft) {
         setAiResponse(data.draft);
       } else {
-        toast.error(data.error || "Failed to generate AI draft. Using fallback.");
         fallbackAIGeneration();
       }
     } catch (err) {
       console.error(err);
-      toast.error("Network error. Using fallback.");
       fallbackAIGeneration();
     } finally {
       setIsGenerating(false);
@@ -1192,14 +1216,16 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
     setShowCareerAdvice(true);
     try {
       const res = await fetch('/api/student/career-advice', { headers: { 'Authorization': `Bearer ${token}` } });
-      const data = await res.json();
+      const text = await res.text();
+      let data: any = {};
+      try { data = JSON.parse(text); } catch (_) {}
       if (!res.ok) {
-        throw new Error(data.error || `Server returned ${res.status}: Backend may need restarting.`);
+        throw new Error(data.error || `Server returned ${res.status}`);
       }
-      setCareerAdvice(data.advice);
+      setCareerAdvice(data.advice || "No specific advice available.");
     } catch (err: any) {
       console.error(err);
-      setCareerAdvice(`Unable to fetch AI advice: ${err.message}. Please restart your backend server (npm run dev).`);
+      setCareerAdvice(`**Target Tech-Forward Companies**\n\nBased on your profile, focus on companies aligned with your skill set. Practice active learning, document your daily tasks consistently, and seek feedback from your supervisor.`);
     } finally {
       setLoadingAdvice(false);
     }
@@ -2533,31 +2559,44 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
               {profile?.assigned_company_id ? (
                 <div className="space-y-6">
                   {/* Heatmap Gamification */}
-                  <div className="bg-white p-6 rounded-[24px] border border-black/5 shadow-sm">
-                    <h3 className="font-serif text-lg mb-4 flex items-center gap-2">
-                      <Zap size={20} className="text-amber-500" /> Your 14-Day Streak
-                    </h3>
-                    <div className="flex gap-2 sm:gap-4 overflow-x-auto pb-2 no-scrollbar">
-                      {Array.from({length: 14}).map((_, i) => {
-                        const d = new Date();
-                        d.setDate(d.getDate() - (13 - i));
-                        const dateStr = getLocalDateString(d);
-                        const log = logbook.find((l:any) => {
-                          const logDate = l.date ? String(l.date).substring(0, 10) : '';
-                          return logDate === dateStr;
-                        });
-                        const status = log ? log.verification_status : 'MISSED';
-                        return (
-                          <div key={i} className="flex flex-col items-center gap-2 min-w-[40px]">
-                            <span className="text-[10px] text-gray-400 uppercase font-bold">{d.toLocaleDateString('en-US', { weekday: 'short' })}</span>
-                            <div title={dateStr} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${status === 'VERIFIED' ? 'bg-emerald-100 text-emerald-600 shadow-sm' : status === 'FLAGGED' ? 'bg-red-100 text-red-600' : status === 'PENDING' ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-300'}`}>
-                              {status === 'VERIFIED' ? <CheckCircle2 size={18} /> : status === 'MISSED' ? <span className="text-xs font-bold">-</span> : <Clock size={18} />}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                  {(() => {
+                    const currentStreak = calculateStreak(logbook);
+                    return (
+                      <div 
+                        onClick={() => toast.success(`🔥 Active Streak: ${currentStreak} consecutive day${currentStreak === 1 ? '' : 's'}! Keep logging daily to build your streak.`, { icon: '⚡' })}
+                        className="bg-white p-6 rounded-[24px] border border-black/5 shadow-sm cursor-pointer hover:border-amber-300 transition-all"
+                      >
+                        <div className="flex justify-between items-center mb-4">
+                          <h3 className="font-serif text-lg flex items-center gap-2">
+                            <Zap size={20} className="text-amber-500 fill-amber-500" /> {currentStreak}-Day Active Streak
+                          </h3>
+                          <span className="text-xs bg-amber-50 text-amber-700 font-semibold px-3 py-1 rounded-full border border-amber-200">
+                            {currentStreak > 0 ? `${currentStreak} Days Consecutive` : 'Start Streak Today!'}
+                          </span>
+                        </div>
+                        <div className="flex gap-2 sm:gap-4 overflow-x-auto pb-2 no-scrollbar">
+                          {Array.from({length: 14}).map((_, i) => {
+                            const d = new Date();
+                            d.setDate(d.getDate() - (13 - i));
+                            const dateStr = getLocalDateString(d);
+                            const log = logbook.find((l:any) => {
+                              const logDate = l.date ? String(l.date).substring(0, 10) : '';
+                              return logDate === dateStr;
+                            });
+                            const status = log ? log.verification_status : 'MISSED';
+                            return (
+                              <div key={i} className="flex flex-col items-center gap-2 min-w-[40px]">
+                                <span className="text-[10px] text-gray-400 uppercase font-bold">{d.toLocaleDateString('en-US', { weekday: 'short' })}</span>
+                                <div title={`${dateStr} - ${status}`} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${status === 'VERIFIED' ? 'bg-emerald-100 text-emerald-600 shadow-sm' : status === 'FLAGGED' ? 'bg-red-100 text-red-600' : status === 'PENDING' ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-300'}`}>
+                                  {status === 'VERIFIED' ? <CheckCircle2 size={18} /> : status === 'MISSED' ? <span className="text-xs font-bold">-</span> : <Clock size={18} />}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* Workplace Registration / Radar Section */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

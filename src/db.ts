@@ -293,6 +293,25 @@ export async function initDb() {
     )
   `);
 
+  // System Settings
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS system_settings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      key TEXT UNIQUE NOT NULL,
+      value TEXT NOT NULL
+    )
+  `);
+
+  // Seed default settings if empty
+  try {
+    const existingGeofence = await db.get("SELECT value FROM system_settings WHERE key = 'GEOFENCE_RADIUS'");
+    if (!existingGeofence) {
+      await db.run("INSERT INTO system_settings (key, value) VALUES ('GEOFENCE_RADIUS', '200')");
+    }
+  } catch (e) {
+    // Ignore seed errors if table already seeded
+  }
+
   // Safe schema upgrades (SQLite only, Postgres handles it in creation)
   if (!db.isPostgres) {
     try { await db.exec(`ALTER TABLE student_profiles ADD COLUMN internship_start_date TEXT`); } catch {}
