@@ -4083,14 +4083,12 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
                 >
                   <Mail size={18} /> Memos & Broadcasts
                 </button>
-                {user.role === 'SUPER_ADMIN' && (
-                  <button
-                    onClick={() => { setActiveTab('settings'); setIsMobileMenuOpen(false); }}
-                    className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === 'settings' ? 'bg-[#5A5A40] text-white shadow-lg' : 'text-gray-500 hover:bg-gray-50'}`}
-                  >
-                    <Settings size={18} /> System Settings
-                  </button>
-                )}
+                <button
+                  onClick={() => { setActiveTab('settings'); setIsMobileMenuOpen(false); }}
+                  className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === 'settings' ? 'bg-[#5A5A40] text-white shadow-lg' : 'text-gray-500 hover:bg-gray-50'}`}
+                >
+                  <Settings size={18} /> System Settings
+                </button>
               </nav>
 
               <div className="pt-6 border-t border-gray-100 mt-auto">
@@ -4167,14 +4165,12 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
             >
               <Mail size={18} /> Memos & Broadcasts
             </button>
-            {user.role === 'SUPER_ADMIN' && (
-              <button
-                onClick={() => setActiveTab('settings')}
-                className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === 'settings' ? 'bg-[#5A5A40] text-white shadow-lg' : 'text-gray-500 hover:bg-gray-50'}`}
-              >
-                <Settings size={18} /> System Settings
-              </button>
-            )}
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === 'settings' ? 'bg-[#5A5A40] text-white shadow-lg' : 'text-gray-500 hover:bg-gray-50'}`}
+            >
+              <Settings size={18} /> System Settings
+            </button>
           </nav>
           <div className="pt-6 border-t border-gray-100 mt-auto">
             <div className="flex items-center gap-3 px-4 py-2 mb-4">
@@ -4648,48 +4644,89 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
             </motion.div>
           )}
 
-          {activeTab === 'settings' && user.role === 'SUPER_ADMIN' && (
+          {activeTab === 'settings' && (
             <motion.div key="settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <header className="mb-8">
-                <h1 className="text-2xl md:text-3xl font-serif font-medium">System Settings Hub</h1>
-                <p className="text-gray-500">Global configurations, database backups, and god-mode controls.</p>
+                <h1 className="text-2xl md:text-3xl font-serif font-medium">System Settings & Controls</h1>
+                <p className="text-gray-500 mt-1">Configure platform-wide geofencing rules, operational policies, and system backups.</p>
               </header>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm">
-                  <h3 className="font-serif text-lg font-medium mb-4 flex items-center gap-2">
-                    <Settings className="text-gray-400" size={20} />
-                    Global Parameters
+                <div className="bg-white p-6 sm:p-8 rounded-3xl border border-black/5 shadow-sm space-y-6">
+                  <h3 className="font-serif text-xl font-medium flex items-center gap-2 pb-4 border-b border-gray-100">
+                    <Settings className="text-[#5A5A40]" size={22} />
+                    Global Operating Parameters
                   </h3>
-                  <div className="space-y-6">
-                    {systemSettings.map(setting => (
-                      <div key={setting.key}>
-                        <label className="block text-sm font-medium mb-1">{setting.key.replace(/_/g, ' ')}</label>
-                        <p className="text-xs text-gray-500 mb-2">{setting.description}</p>
+                  
+                  {systemSettings.length === 0 ? (
+                    <div className="space-y-6">
+                      <div>
+                        <label className="block text-xs font-bold uppercase text-gray-400 mb-1">GEOFENCE RADIUS (Meters)</label>
+                        <p className="text-xs text-gray-500 mb-2">Maximum allowed distance from company workplace for log verification.</p>
                         <div className="flex gap-2">
-                          <input 
-                            value={setting.value} 
-                            onChange={(e) => setSystemSettings(systemSettings.map(s => s.key === setting.key ? { ...s, value: e.target.value } : s))}
-                            className="border rounded-xl px-4 py-2 text-sm flex-1 focus:outline-none focus:ring-1 focus:ring-[#5A5A40]" 
-                          />
-                          <button onClick={() => handleUpdateSetting(setting.key, setting.value)} className="bg-gray-100 text-gray-700 px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-200">
+                          <input defaultValue="200" id="setting_geofence" className="border border-gray-200 rounded-xl px-4 py-2 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-[#5A5A40]" />
+                          <button onClick={() => {
+                            const val = (document.getElementById('setting_geofence') as HTMLInputElement)?.value || '200';
+                            handleUpdateSetting('GEOFENCE_RADIUS', val);
+                          }} className="bg-[#5A5A40] text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-[#4A4A30] transition-colors">
                             Save
                           </button>
                         </div>
                       </div>
-                    ))}
-                  </div>
+
+                      <div>
+                        <label className="block text-xs font-bold uppercase text-gray-400 mb-1">ALLOW LOCATION CHANGE REQUESTS</label>
+                        <p className="text-xs text-gray-500 mb-2">Enable or disable student relocation requests.</p>
+                        <div className="flex gap-2">
+                          <select id="setting_location_change" defaultValue="true" className="border border-gray-200 rounded-xl px-4 py-2 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-[#5A5A40]">
+                            <option value="true">Allowed</option>
+                            <option value="false">Disabled</option>
+                          </select>
+                          <button onClick={() => {
+                            const val = (document.getElementById('setting_location_change') as HTMLSelectElement)?.value || 'true';
+                            handleUpdateSetting('ALLOW_LOCATION_CHANGE', val);
+                          }} className="bg-[#5A5A40] text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-[#4A4A30] transition-colors">
+                            Save
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    systemSettings.map(setting => (
+                      <div key={setting.key} className="pb-4 border-b border-gray-50 last:border-0 last:pb-0">
+                        <label className="block text-xs font-bold uppercase text-gray-400 mb-1">{setting.key.replace(/_/g, ' ')}</label>
+                        <p className="text-xs text-gray-500 mb-2">{setting.description || 'Global system configuration value.'}</p>
+                        <div className="flex gap-2">
+                          <input 
+                            value={setting.value} 
+                            onChange={(e) => setSystemSettings(systemSettings.map(s => s.key === setting.key ? { ...s, value: e.target.value } : s))}
+                            className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-[#5A5A40] font-mono" 
+                          />
+                          <button onClick={() => handleUpdateSetting(setting.key, setting.value)} className="bg-[#5A5A40] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#4A4A30] transition-colors shadow-sm">
+                            Save
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
 
-                <div className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm flex flex-col items-start justify-center">
-                  <div className="w-12 h-12 bg-amber-100 text-amber-700 rounded-2xl flex items-center justify-center mb-4">
-                    <Activity size={24} />
+                <div className="bg-white p-6 sm:p-8 rounded-3xl border border-black/5 shadow-sm flex flex-col justify-between">
+                  <div>
+                    <div className="w-12 h-12 bg-amber-100 text-amber-700 rounded-2xl flex items-center justify-center mb-4">
+                      <Activity size={24} />
+                    </div>
+                    <h3 className="font-serif text-xl font-medium mb-2">Full Platform Backup</h3>
+                    <p className="text-sm text-gray-500 mb-6 leading-relaxed">
+                      Generate and download an encrypted snapshot JSON file containing all user records, company profiles, student placements, daily logbook entries, and system configurations.
+                    </p>
                   </div>
-                  <h3 className="font-serif text-lg font-medium mb-2">Full Database Backup</h3>
-                  <p className="text-sm text-gray-500 mb-6">Download a complete snapshot of all users, companies, students, and logs in JSON format for safekeeping.</p>
-                  <button onClick={handleDownloadBackup} className="bg-[#5A5A40] text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-[#4A4A30] w-full shadow-md">
-                    Download Backup (.json)
-                  </button>
+                  
+                  <div className="pt-6 border-t border-gray-100 w-full">
+                    <button onClick={handleDownloadBackup} className="bg-[#5A5A40] text-white px-6 py-3.5 rounded-xl text-sm font-medium hover:bg-[#4A4A30] w-full shadow-md flex items-center justify-center gap-2 transition-all">
+                      <Activity size={18} /> Download Backup (.json)
+                    </button>
+                  </div>
                 </div>
               </div>
             </motion.div>

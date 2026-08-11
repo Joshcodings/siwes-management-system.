@@ -304,9 +304,16 @@ export async function initDb() {
 
   // Seed default settings if empty
   try {
-    const existingGeofence = await db.get("SELECT value FROM system_settings WHERE key = 'GEOFENCE_RADIUS'");
-    if (!existingGeofence) {
-      await db.run("INSERT INTO system_settings (key, value) VALUES ('GEOFENCE_RADIUS', '200')");
+    const defaults = [
+      { key: 'GEOFENCE_RADIUS', value: '200' },
+      { key: 'ALLOW_LOCATION_CHANGE', value: 'true' },
+      { key: 'MAX_WEEKLY_LOGS', value: '5' }
+    ];
+    for (const item of defaults) {
+      const existing = await db.get("SELECT value FROM system_settings WHERE key = ?", item.key);
+      if (!existing) {
+        await db.run("INSERT INTO system_settings (key, value) VALUES (?, ?)", item.key, item.value);
+      }
     }
   } catch (e) {
     // Ignore seed errors if table already seeded

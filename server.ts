@@ -408,7 +408,7 @@ async function startServer() {
   const ROLE_PERMISSIONS: Record<string, string[]> = {
     STUDENT: ["SUBMIT_LOGS", "VIEW_RECOMMENDATIONS", "MANAGE_PROFILE"],
     SCHOOL_SUPERVISOR: ["VIEW_ASSIGNED_STUDENTS", "APPROVE_LOGS", "GRADE_STUDENTS"],
-    ADMIN: ["MANAGE_USERS", "MANAGE_COMPANIES", "VIEW_ALL_REPORTS", "VIEW_ALL_STUDENTS"],
+    ADMIN: ["MANAGE_USERS", "MANAGE_COMPANIES", "VIEW_ALL_REPORTS", "VIEW_ALL_STUDENTS", "SYSTEM_ADMIN"],
     SUPER_ADMIN: ["MANAGE_USERS", "MANAGE_COMPANIES", "VIEW_ALL_REPORTS", "VIEW_ALL_STUDENTS", "ASSIGN_ROLES", "CREATE_STAFF", "SYSTEM_ADMIN"]
   };
 
@@ -1197,7 +1197,12 @@ Generate a short, realistic, professional 2-3 sentence draft of a daily logbook 
   app.put("/api/admin/settings", authenticate, authorize("SYSTEM_ADMIN"), async (req: any, res) => {
     const { key, value } = req.body;
     try {
-      await db.run("UPDATE system_settings SET value = ? WHERE key = ?", value, key);
+      const existing = await db.get("SELECT id FROM system_settings WHERE key = ?", key);
+      if (existing) {
+        await db.run("UPDATE system_settings SET value = ? WHERE key = ?", value, key);
+      } else {
+        await db.run("INSERT INTO system_settings (key, value) VALUES (?, ?)", key, value);
+      }
       res.json({ success: true });
     } catch (e: any) {
       res.status(500).json({ error: e.message });
