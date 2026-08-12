@@ -629,32 +629,53 @@ async function startServer() {
   // --- AI CAREER ADVICE ---
   app.get("/api/student/career-advice", authenticate, async (req: any, res) => {
     let student: any = null;
+    let recentLogs: any[] = [];
+    let companyInfo = "Not yet assigned to a company";
     try {
       student = await db.get("SELECT * FROM student_profiles WHERE user_id = ?", req.user.id);
       if (!student) {
         return res.json({ advice: "Please complete your profile to get personalized AI career advice." });
       }
 
+      // 1. Fetch student's real-time recent logbook entries
+      recentLogs = await db.all("SELECT date, activity_description FROM logbook_entries WHERE student_id = ? ORDER BY date DESC LIMIT 5", req.user.id);
+      
+      // 2. Fetch assigned company info
+      if (student.assigned_company_id) {
+        const comp: any = await db.get("SELECT name, industry_type FROM companies WHERE id = ?", student.assigned_company_id);
+        if (comp) companyInfo = `${comp.name} (${comp.industry_type})`;
+      }
+
+      const logSummary = recentLogs.length > 0
+        ? recentLogs.map((l: any) => `- On ${l.date}: ${l.activity_description}`).join("\n")
+        : "No logbook entries recorded yet.";
+
       const apiKey = await getGeminiApiKey();
       if (!apiKey) throw new Error("no-key");
 
-      const prompt = `You are an expert career advisor for university students doing their industrial training (SIWES).
-Student Profile:
-- Course: ${student.course || 'Unknown'}
-- Department: ${student.department || 'Unknown'}
-- Skills: ${student.skills || 'General'}
-- Location Preference: ${student.location_preference || 'Flexible'}
+      const prompt = `You are a live AI Career Advisor providing real-time personalized guidance to a university SIWES student.
+CURRENT REAL-WORLD PROGRESS:
+- Student Profile: Course: ${student.course || 'General'}, Department: ${student.department || 'Technology'}
+- Skills: ${student.skills || 'Practical technical skills'}
+- Current Placement: ${companyInfo}
+- Recent Logged Work Activities:
+${logSummary}
 
-Provide 2 short, highly personalized paragraphs of career advice. Highlight what kind of companies they should target and how they can best leverage their specific skills in the industry. Use markdown formatting like bolding.`;
+Provide 2 short, highly tailored paragraphs of advice based directly on what they are currently doing at their placement and their course of study. Point out specific skills to sharpen or next steps to take at work. Use bold markdown formatting.`;
 
       const adviceText = await callGeminiAI(apiKey, prompt);
       res.json({ advice: adviceText });
     } catch (e: any) {
       console.error("AI Career Advice Error, using presentation fallback:", e.message);
       
+      const lastActivity = recentLogs[0]?.activity_description 
+        ? `"${recentLogs[0].activity_description.substring(0, 70)}..."` 
+        : "your recent daily tasks";
+      const companyStr = companyInfo !== "Not yet assigned to a company" ? companyInfo : "your internship placement";
       const skillsStr = (student && student.skills) ? student.skills : "your technical skills";
       const courseStr = (student && student.course) ? student.course : "your degree";
-      const advice = `**Target Tech-Forward Companies**\n\nBased on your background in **${courseStr}**, you should prioritize companies that heavily utilize **${skillsStr}**. These environments will give you the practical exposure needed to bridge the gap between academic theory and real-world application.\n\n**Leverage Your Unique Strengths**\n\nDuring your SIWES, don't just follow instructions — actively look for ways to optimize existing workflows using **${skillsStr}**. Employers look for proactive interns who identify bottlenecks and suggest improvements. Your profile makes you an excellent fit for **mid-sized tech companies** where you can grow quickly.`;
+
+      const advice = `**Real-time Progress Insight for ${courseStr}**\n\nBased on your current work—including **${lastActivity}** at **${companyStr}**—you are actively applying **${skillsStr}** in a professional environment. Keep building on these practical deliverables to strengthen your technical portfolio.\n\n**Actionable Next Steps**\n\nDiscuss your progress with your supervisor and seek additional opportunities to leverage **${skillsStr}** on real-world projects. Documenting these specific outcomes will make your final SIWES report stand out to academic evaluators.`;
       
       res.json({ advice });
     }
