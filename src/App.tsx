@@ -476,7 +476,7 @@ const Login = ({ onLogin }: { onLogin: (user: User, token: string) => void }) =>
       setIsRegistering(false);
       setMatNumber('');
       setOtpCode('');
-      toast.success('✅ Email verified! Your account is ready. Please sign in.');
+      toast.success('Email verified! Your account is ready. Please sign in.');
     } else {
       toast.error(data.error || 'Verification failed');
     }
@@ -522,7 +522,7 @@ const Login = ({ onLogin }: { onLogin: (user: User, token: string) => void }) =>
         {screen === 'verify' && (
           <div className="text-center mb-8">
             <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background:'linear-gradient(135deg,#5A5A40,#8a8a60)', boxShadow:'0 10px 30px rgba(90,90,64,0.3)' }}>
-              <span className="text-white text-2xl">📧</span>
+              <Mail size={28} className="text-white" />
             </div>
             <h1 className="font-serif text-2xl font-bold text-[#1A1A1A] mb-1">Check Your Email</h1>
             <p className="text-sm text-gray-500">We sent a 6-digit code to <strong>{email}</strong></p>
@@ -682,12 +682,21 @@ const NotificationBell = ({ token }: { token: string }) => {
     setNotifications(prev => prev.map(n => ({ ...n, is_read: 1 })));
   };
 
-  const getIcon = (msg: string) => {
-    if (msg.startsWith('📋') || msg.startsWith('💬')) return null;
-    if (msg.includes('approved') || msg.includes('✅')) return '✅';
-    if (msg.includes('rejected') || msg.includes('❌')) return '❌';
-    if (msg.includes('comment') || msg.includes('💬')) return '💬';
-    return '🔔';
+  const getNotificationIcon = (msg: string) => {
+    const low = msg.toLowerCase();
+    if (low.includes('approved') || low.includes('success')) {
+      return <CheckCircle2 size={16} className="text-emerald-500" />;
+    }
+    if (low.includes('rejected') || low.includes('failed') || low.includes('not approved')) {
+      return <AlertCircle size={16} className="text-red-500" />;
+    }
+    if (low.includes('commented') || low.includes('comment')) {
+      return <Mail size={16} className="text-amber-500" />;
+    }
+    if (low.includes('logbook') || low.includes('submitted')) {
+      return <BookOpen size={16} className="text-blue-500" />;
+    }
+    return <Bell size={16} className="text-gray-400" />;
   };
 
   return (
@@ -745,12 +754,9 @@ const NotificationBell = ({ token }: { token: string }) => {
             ) : (
               notifications.map((n: any) => (
                 <div key={n.id} className={`px-5 py-4 flex gap-3 transition-colors hover:bg-gray-50 ${!n.is_read ? 'bg-[#5A5A40]/5' : ''}`}>
-                  {/* Unread dot */}
-                  <div className="flex-shrink-0 pt-0.5">
-                    {!n.is_read
-                      ? <div className="w-2 h-2 rounded-full bg-[#5A5A40] mt-1" />
-                      : <div className="w-2 h-2 rounded-full bg-transparent mt-1" />
-                    }
+                  {/* Category icon */}
+                  <div className="flex-shrink-0 pt-0.5 flex items-center justify-center w-5">
+                    {getNotificationIcon(n.message)}
                   </div>
                   {/* Content */}
                   <div className="flex-1 min-w-0">
@@ -758,7 +764,7 @@ const NotificationBell = ({ token }: { token: string }) => {
                       {n.message}
                     </p>
                     <p className="text-[10px] text-gray-400 mt-1.5 flex items-center gap-1">
-                      🕐 {new Date(n.created_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      <Clock size={10} className="text-gray-400" /> {new Date(n.created_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
                 </div>
@@ -1362,7 +1368,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
         });
         const data = await res.json();
         if (data.success) {
-          toast.success(`✅ Logbook submitted! GPS: ${data.status} — ${Math.round(data.distance)}m from site`);
+          toast.success(`Logbook submitted! GPS: ${data.status} — ${Math.round(data.distance)}m from site`);
           setLastSubmitted(new Date().toLocaleTimeString());
           fetchData();
           setNewLog({ activity: '', date: getLocalDateString(), attachment: null });
@@ -1752,7 +1758,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
             >
               <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <h1 className="text-2xl md:text-3xl font-serif font-medium text-[#1A1A1A]">Welcome back, {user?.fullName?.split(' ')[0] || 'User'} 👋</h1>
+                  <h1 className="text-2xl md:text-3xl font-serif font-medium text-[#1A1A1A]">Welcome back, {user?.fullName?.split(' ')[0] || 'User'}</h1>
                   <p className="text-sm md:text-base text-gray-500 mt-1">Here's your SIWES progress at a glance.</p>
                 </div>
                 <div className="text-right">
@@ -1796,7 +1802,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                   icon={Building2}
                   color="#16A34A"
                   bg="#16A34A"
-                  subtitle={profile?.assigned_company_id ? 'Placed ✓' : 'Pending'}
+                  subtitle={profile?.assigned_company_id ? 'Placed' : 'Pending'}
                 />
               </div>
 
@@ -2087,7 +2093,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                               <h3 className="text-xl font-semibold text-gray-900">{rec.name}</h3>
                               {isHighlyRecommended && (
                                 <span className="px-2.5 py-0.5 bg-[#5A5A40] text-white text-[10px] font-bold rounded-full uppercase tracking-wider flex items-center gap-1">
-                                  <Star size={10} className="fill-white" /> Highly Recommended
+                                  Highly Recommended
                                 </span>
                               )}
                             </div>
@@ -2172,7 +2178,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                             <Sparkles size={14} className="text-[#5A5A40]" />
                             <span className="text-sm font-semibold text-gray-700">
                               AI Verdict: <span style={{ color: total >= 80 ? '#16A34A' : total >= 60 ? '#5A5A40' : '#D97706' }}>
-                                {total >= 80 ? '🌟 Highly Recommended' : total >= 60 ? '✅ Recommended' : '⚠️ Partial Match'}
+                                {total >= 80 ? 'Highly Recommended' : total >= 60 ? 'Recommended' : 'Partial Match'}
                               </span>
                             </span>
                           </div>
@@ -2195,26 +2201,26 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                   {/* Map Search & Stats Bar */}
                   <div className="flex gap-4 items-center flex-wrap">
                     <div className="relative flex-1 min-w-[220px]">
+                      <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                       <input
                         type="text"
                         placeholder="Search companies, cities, industries…"
                         value={mapSearch}
                         onChange={e => setMapSearch(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#5A5A40] text-sm shadow-sm"
+                        className="w-full pl-12 pr-4 py-2.5 rounded-2xl bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#5A5A40] text-sm shadow-sm"
                       />
-                      <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                       {mapSearch && <button onClick={() => setMapSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs">✕</button>}
                     </div>
-                    {/* Legend — Lucide icons, no emoji */}
+                    {/* Legend */}
                     <div className="flex gap-3 text-xs flex-wrap">
                       <span className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-full font-medium text-amber-700">
-                        <Award size={12} className="text-amber-600" /> Top Match
+                        Top Match
                       </span>
                       <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-full font-medium text-emerald-700">
-                        <CheckCircle2 size={12} className="text-emerald-600" /> Recommended
+                        Recommended
                       </span>
                       <span className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-full font-medium text-blue-700">
-                        <Building2 size={12} className="text-blue-500" /> All Companies
+                        All Companies
                       </span>
                     </div>
                     <span className="text-xs text-gray-400 whitespace-nowrap">
@@ -2545,7 +2551,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                     }}
                     className="flex-1 sm:flex-initial border border-[#5A5A40] text-[#5A5A40] px-5 py-3 rounded-full text-xs sm:text-sm font-medium flex items-center justify-center gap-2 hover:bg-[#5A5A40]/5 transition-colors"
                   >
-                    ↓ Download PDF
+                    <FileText size={16} /> Download PDF
                   </button>
                   <button
                     onClick={() => document.getElementById('log-form')?.scrollIntoView({ behavior: 'smooth' })}
@@ -2563,7 +2569,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                     const currentStreak = calculateStreak(logbook);
                     return (
                       <div 
-                        onClick={() => toast.success(`🔥 Active Streak: ${currentStreak} consecutive day${currentStreak === 1 ? '' : 's'}! Keep logging daily to build your streak.`, { icon: '⚡' })}
+                        onClick={() => toast.success(`Active Streak: ${currentStreak} consecutive day${currentStreak === 1 ? '' : 's'}! Keep logging daily to build your streak.`)}
                         className="bg-white p-6 rounded-[24px] border border-black/5 shadow-sm cursor-pointer hover:border-amber-300 transition-all"
                       >
                         <div className="flex justify-between items-center mb-4">
@@ -2630,8 +2636,8 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                                  You are {liveDistance ? `${Math.round(liveDistance)}m` : 'unknown distance'} away from your registered site.
                                </p>
                                {gpsAccuracy && gpsAccuracy > 150 && (
-                                 <p className="text-xs text-red-600 mb-3 font-medium">
-                                   ⚠️ Weak GPS Signal (±{Math.round(gpsAccuracy)}m). Please step outside for a clear sky view.
+                                 <p className="text-xs text-amber-700">
+                                   Weak GPS Signal (±{Math.round(gpsAccuracy)}m). Please step outside for a clear sky view.
                                  </p>
                                )}
                                {locationRequests.some(r => r.status === 'PENDING') ? (
@@ -2647,34 +2653,6 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                                    Request Change of Location
                                  </button>
                                )}
-                               <p className="text-[10px] text-center text-red-500 font-medium animate-pulse mt-3">
-                                 Strict Geofence Active: You cannot submit logs until you are physically on-site.
-                               </p>
-                             </div>
-                           )}
-
-                           {showLocationRequestForm && (
-                             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-                               <div className="bg-white rounded-3xl p-8 max-w-lg w-full">
-                                 <h3 className="font-serif text-2xl mb-2">Request Location Change</h3>
-                                 <p className="text-sm text-gray-500 mb-6">Write a brief letter to the administrator explaining why you need to change your SIWES location.</p>
-                                 <form onSubmit={handleLocationRequest} className="space-y-4">
-                                   <div>
-                                     <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Reason / Letter</label>
-                                     <textarea
-                                       value={locationRequestReason}
-                                       onChange={(e) => setLocationRequestReason(e.target.value)}
-                                       className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 min-h-[150px] focus:outline-none focus:ring-2 focus:ring-[#5A5A40]"
-                                       placeholder="Dear Admin, I am requesting a change of location because..."
-                                       required
-                                     ></textarea>
-                                   </div>
-                                   <div className="flex gap-4 pt-4">
-                                     <button type="button" onClick={() => setShowLocationRequestForm(false)} className="flex-1 px-4 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 text-sm font-medium transition-colors">Cancel</button>
-                                     <button type="submit" className="flex-1 bg-[#5A5A40] text-white px-4 py-3 rounded-xl hover:bg-[#4A4A30] text-sm font-medium transition-colors">Submit Request</button>
-                                   </div>
-                                 </form>
-                               </div>
                              </div>
                            )}
 
@@ -2804,9 +2782,9 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                                Submitting...
                              </span>
                            ) : isLiveVerified ? (
-                             'Submit Verified Logbook 📋'
+                             'Submit Verified Logbook'
                            ) : (
-                             'Outside Geofence (Disabled) 🚫'
+                             'Outside Geofence (Disabled)'
                            )}
                          </button>
                        </form>
@@ -3108,7 +3086,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                     }}
                     className="w-full bg-[#5A5A40] text-white py-4 rounded-xl font-medium hover:bg-[#4A4A30] transition-colors shadow-lg shadow-[#5A5A40]/10 flex items-center justify-center gap-2"
                   >
-                    ↓ Download Official Letter
+                    <FileText size={18} /> Download Official Letter
                   </button>
                 </div>
 
@@ -3663,7 +3641,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
               </div>
             </motion.div>
           )}
-        </AnimatePresence>
+          </AnimatePresence>
 
         {/* AI Logbook Assistant Floating Widget */}
         <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
@@ -3693,8 +3671,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
             <Zap size={24} className={showAIAssistant ? 'text-amber-300' : ''} />
           </button>
         </div>
-
-        </main>
+      </main>
       </div>
     </div>
   );
@@ -4228,7 +4205,7 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
                 <AnimatedStatCard label="Total Students" value={analytics.totalStudents ?? 0} icon={GraduationCap} color="#5A5A40" bg="#5A5A40" subtitle="Registered in system" />
                 <AnimatedStatCard label="Placed Students" value={analytics.totalPlacements ?? 0} icon={CheckCircle2} color="#16A34A" bg="#16A34A" subtitle={`${analytics.totalStudents > 0 ? Math.round((analytics.totalPlacements/analytics.totalStudents)*100) : 0}% placement rate`} />
                 <AnimatedStatCard label="Companies" value={analytics.totalCompanies ?? 0} icon={Building2} color="#3B82F6" bg="#3B82F6" subtitle="Registered nationwide" />
-                <AnimatedStatCard label="Pending Reviews" value={analytics.pendingApplications ?? 0} icon={ClipboardCheck} color="#7C3AED" bg="#7C3AED" subtitle={analytics.pendingApplications > 0 ? "⚠ Action required" : "All clear"} />
+                <AnimatedStatCard label="Pending Reviews" value={analytics.pendingApplications ?? 0} icon={ClipboardCheck} color="#7C3AED" bg="#7C3AED" subtitle={analytics.pendingApplications > 0 ? "Action required" : "All clear"} />
               </div>
 
               {/* ── Second Row ── */}
@@ -4522,11 +4499,12 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
                   <p className="text-gray-500">Assign school supervisors and placement companies to students.</p>
                 </div>
                 <button onClick={handleExportAllStudentsPDF} className="flex items-center gap-2 border border-[#5A5A40] text-[#5A5A40] px-5 py-3 rounded-full text-sm font-medium hover:bg-[#5A5A40]/5 transition-colors">
-                  ↓ Export All PDF
+                  <FileText size={16} /> Export All PDF
                 </button>
               </header>
               {/* Search Bar */}
-              <div className="relative">
+              <div className="relative flex-1">
+                <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search by name, course, department, or email…"
@@ -4534,7 +4512,6 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
                   onChange={e => setStudentSearch(e.target.value)}
                   className="w-full pl-12 pr-4 py-3 rounded-2xl bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#5A5A40] text-sm shadow-sm"
                 />
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
                 {studentSearch && (
                   <button onClick={() => setStudentSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs">✕ Clear</button>
                 )}

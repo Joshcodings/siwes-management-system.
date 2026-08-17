@@ -222,7 +222,7 @@ async function startServer() {
               <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #F5F5F0; border-radius: 16px;">
                 <div style="text-align:center; margin-bottom: 24px;">
                   <div style="display:inline-block; background: linear-gradient(135deg,#5A5A40,#8a8a60); border-radius: 14px; padding: 14px 18px;">
-                    <span style="color:white; font-size: 28px;">🎓</span>
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle;"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/></svg>
                   </div>
                 </div>
                 <h1 style="color:#1A1A1A; font-size:22px; text-align:center; margin:0 0 8px;">SIWES Portal</h1>
@@ -364,7 +364,7 @@ async function startServer() {
     if (attemptInfo && attemptInfo.lockUntil > Date.now()) {
       const minutesLeft = Math.ceil((attemptInfo.lockUntil - Date.now()) / 60000);
       return res.status(429).json({
-        error: `🔒 Security Lockout: Account is temporarily locked due to 5 failed login attempts. Please try again in ${minutesLeft} minute${minutesLeft === 1 ? '' : 's'} or reset your password.`
+        error: `Security Lockout: Account is temporarily locked due to 5 failed login attempts. Please try again in ${minutesLeft} minute${minutesLeft === 1 ? '' : 's'} or reset your password.`
       });
     }
 
@@ -380,7 +380,7 @@ async function startServer() {
             lockUntil: Date.now() + LOCK_TIME_MS
           });
           return res.status(429).json({
-            error: "🔒 Account Locked: 5 consecutive failed login attempts reached. This account is locked for 15 minutes to prevent unauthorized access."
+            error: "Account Locked: 5 consecutive failed login attempts reached. This account is locked for 15 minutes to prevent unauthorized access."
           });
         } else {
           loginAttemptStore.set(cleanEmail, {
@@ -1010,7 +1010,7 @@ Generate a short, realistic, professional 2-3 sentence draft of a daily logbook 
         const studentUser: any = await db.get("SELECT full_name FROM users WHERE id = ?", req.user.id);
         await db.run("INSERT INTO notifications (user_id, message) VALUES (?, ?)",
           student.school_supervisor_id,
-          `📋 ${studentUser?.full_name} submitted a new logbook entry for ${date}.`
+          `${studentUser?.full_name} submitted a new logbook entry for ${date}.`
         );
 
         // Also send email to supervisor
@@ -1150,7 +1150,7 @@ Generate a short, realistic, professional 2-3 sentence draft of a daily logbook 
             // Notify student
             await db.run("INSERT INTO notifications (user_id, message) VALUES (?, ?)",
               reqDoc.student_id,
-              `✅ Your request to change location was approved. Please register your new workplace GPS in the Logbook tab.`
+              `Your request to change location was approved. Please register your new workplace GPS in the Logbook tab.`
             );
           }
         } else if (status === 'REJECTED') {
@@ -1158,7 +1158,7 @@ Generate a short, realistic, professional 2-3 sentence draft of a daily logbook 
           if (reqDoc) {
             await db.run("INSERT INTO notifications (user_id, message) VALUES (?, ?)",
               reqDoc.student_id,
-              `❌ Your request to change location was rejected. Please contact the administrator.`
+              `Your request to change location was rejected. Please contact the administrator.`
             );
           }
         }
@@ -1191,7 +1191,7 @@ Generate a short, realistic, professional 2-3 sentence draft of a daily logbook 
             // Notify student of approval
             await db.run("INSERT INTO notifications (user_id, message) VALUES (?, ?)",
               app.student_id,
-              `✅ Your application to ${company?.name || 'a company'} has been approved! You are now officially placed. All your other pending applications have been automatically cleared.`
+              `Your application to ${company?.name || 'a company'} has been approved! You are now officially placed. All your other pending applications have been automatically cleared.`
             );
           }
         } else if (status === 'REJECTED') {
@@ -1200,7 +1200,7 @@ Generate a short, realistic, professional 2-3 sentence draft of a daily logbook 
             const company: any = await db.get("SELECT name FROM companies WHERE id = ?", app.company_id);
             await db.run("INSERT INTO notifications (user_id, message) VALUES (?, ?)",
               app.student_id,
-              `❌ Your application to ${company?.name || 'a company'} was not approved. Please apply to another company.`
+              `Your application to ${company?.name || 'a company'} was not approved. Please apply to another company.`
             );
           }
         }
@@ -1438,7 +1438,7 @@ Generate a short, realistic, professional 2-3 sentence draft of a daily logbook 
         const sup: any = await db.get("SELECT full_name FROM users WHERE id = ?", req.user.id);
         await db.run("INSERT INTO notifications (user_id, message) VALUES (?, ?)",
           log.student_id,
-          `💬 ${sup?.full_name || 'Your supervisor'} commented on your logbook entry.`
+          `${sup?.full_name || 'Your supervisor'} commented on your logbook entry.`
         );
       }
       res.json({ success: true });
