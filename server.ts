@@ -38,8 +38,11 @@ const transporter = nodemailer.createTransport(
   }
 );
 
-// In-memory OTP store: email -> { code, expires, data }
-const otpStore = new Map<string, { code: string; expires: number; data: any }>();
+// In-memory OTP store: email -> { code, expires, data, failedAttempts }
+const otpStore = new Map<string, { code: string; expires: number; data: any; failedAttempts?: number }>();
+
+// Failed login attempt tracking: email -> { count: number, lockUntil: number }
+const loginAttemptStore = new Map<string, { count: number; lockUntil: number }>();
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -71,6 +74,15 @@ async function startServer() {
   // --- SECURITY MIDDLEWARE ---
   app.use(helmet({ contentSecurityPolicy: false }));
   app.use(cors({ origin: process.env.APP_URL || true, credentials: true }));
+
+  // Custom HTTP Security Headers
+  app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    next();
+  });
 
   const isProduction = process.env.NODE_ENV === 'production';
 
@@ -255,7 +267,13 @@ async function startServer() {
     }
 
     if (entry.code !== code.trim()) {
-      return res.status(400).json({ error: "Incorrect verification code. Please try again." });
+      entry.failedAttempts = (entry.failedAttempts || 0) + 1;
+      if (entry.failedAttempts >= 5) {
+        otpStore.delete(key);
+        return res.status(400).json({ error: "Too many incorrect code attempts. Verification code invalidated. Please request a new one." });
+      }
+      const remaining = 5 - entry.failedAttempts;
+      return res.status(400).json({ error: `Incorrect verification code. (${remaining} attempt${remaining === 1 ? '' : 's'} remaining)` });
     }
 
     // Code is valid — create the account
@@ -333,11 +351,52 @@ async function startServer() {
 
   app.post("/api/auth/login", async (req, res) => {
     const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password are required." });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const MAX_LOGIN_ATTEMPTS = 5;
+    const LOCK_TIME_MS = 15 * 60 * 1000; // 15 minutes
+
+    // Check account lockout status
+    const attemptInfo = loginAttemptStore.get(cleanEmail);
+    if (attemptInfo && attemptInfo.lockUntil > Date.now()) {
+      const minutesLeft = Math.ceil((attemptInfo.lockUntil - Date.now()) / 60000);
+      return res.status(429).json({
+        error: `🔒 Security Lockout: Account is temporarily locked due to 5 failed login attempts. Please try again in ${minutesLeft} minute${minutesLeft === 1 ? '' : 's'} or reset your password.`
+      });
+    }
+
     try {
-      const user: any = await db.get("SELECT * FROM users WHERE email = ?", email);
+      const user: any = await db.get("SELECT * FROM users WHERE email = ?", cleanEmail);
       if (!user || !bcrypt.compareSync(password, user.password)) {
-        return res.status(401).json({ error: "Invalid credentials" });
+        // Track failed attempt
+        const currentAttempts = (attemptInfo && attemptInfo.lockUntil <= Date.now() ? 0 : attemptInfo?.count || 0) + 1;
+        
+        if (currentAttempts >= MAX_LOGIN_ATTEMPTS) {
+          loginAttemptStore.set(cleanEmail, {
+            count: currentAttempts,
+            lockUntil: Date.now() + LOCK_TIME_MS
+          });
+          return res.status(429).json({
+            error: "🔒 Account Locked: 5 consecutive failed login attempts reached. This account is locked for 15 minutes to prevent unauthorized access."
+          });
+        } else {
+          loginAttemptStore.set(cleanEmail, {
+            count: currentAttempts,
+            lockUntil: 0
+          });
+          const remaining = MAX_LOGIN_ATTEMPTS - currentAttempts;
+          return res.status(401).json({
+            error: `Invalid email or password. (${remaining} attempt${remaining === 1 ? '' : 's'} remaining before 15-minute lock)`
+          });
+        }
       }
+
+      // Successful authentication — Reset failed attempt counter
+      loginAttemptStore.delete(cleanEmail);
+
       const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
       res.json({ token, user: { id: user.id, email: user.email, fullName: user.full_name, role: user.role } });
     } catch (e: any) {
@@ -349,8 +408,9 @@ async function startServer() {
   app.post("/api/auth/forgot-password", async (req, res) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ error: "Email is required" });
+    const cleanEmail = email.trim().toLowerCase();
     try {
-      const user: any = await db.get("SELECT * FROM users WHERE email = ?", email);
+      const user: any = await db.get("SELECT * FROM users WHERE email = ?", cleanEmail);
       if (!user) {
         // Don't reveal if email exists — security best practice
         return res.json({ message: "If that email exists, a reset link has been sent." });
@@ -389,7 +449,7 @@ async function startServer() {
   app.post("/api/auth/reset-password", async (req, res) => {
     const { token, password } = req.body;
     if (!token || !password) return res.status(400).json({ error: "Token and password are required" });
-    if (password.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
+    if (password.length < 8) return res.status(400).json({ error: "Password must be at least 8 characters long." });
     try {
       const record: any = await db.get(
         "SELECT * FROM password_reset_tokens WHERE token = ? AND used = 0 AND expires_at > datetime('now')",

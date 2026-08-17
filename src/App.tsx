@@ -450,7 +450,7 @@ const Login = ({ onLogin }: { onLogin: (user: User, token: string) => void }) =>
     }
 
     const endpoint = '/api/auth/login';
-    const body = { email, password };
+    const body = { email: email.trim(), password };
     const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const data = await res.json();
     setLoading(false);
