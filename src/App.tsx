@@ -788,19 +788,20 @@ const NotificationBell = ({ token }: { token: string }) => {
 
 
 const ITF_OFFICES = [
-  { state: 'Lagos', name: 'ITF Ikeja Area Office', address: '3, Gillis Harry Street, off Wole Ariyo Street, Lekki Phase 1, Lagos', email: 'ikeja-ao@itf.gov.ng', phone: '+234 1 270 4118', latitude: 6.4389, longitude: 3.4422 },
-  { state: 'Lagos (Island)', name: 'ITF Lagos Island Area Office', address: '5th Floor, 26, Catholic Mission Street, Lagos Island', email: 'lagosisland-ao@itf.gov.ng', phone: '+234 1 462 2580', latitude: 6.4497, longitude: 3.3986 },
-  { state: 'Lagos (Apapa)', name: 'ITF Apapa Area Office', address: '4, Point Road, Apapa, Lagos', email: 'apapa-ao@itf.gov.ng', phone: '+234 1 545 3290', latitude: 6.4431, longitude: 3.3672 },
-  { state: 'Oyo', name: 'ITF Ibadan Area Office', address: 'Oyo State Secretariat Road, Agodi, Ibadan', email: 'ibadan-ao@itf.gov.ng', phone: '+234 2 810 0345', latitude: 7.4167, longitude: 3.9167 },
-  { state: 'FCT - Abuja', name: 'ITF Abuja Area Office', address: 'No 6, Dar-es-Salaam Street, Wuse II, Abuja', email: 'abuja-ao@itf.gov.ng', phone: '+234 9 523 9308', latitude: 9.0765, longitude: 7.4983 },
-  { state: 'Rivers', name: 'ITF Port Harcourt Area Office', address: '1, ITF Close, off Secretariat Road, Port Harcourt', email: 'portharcourt-ao@itf.gov.ng', phone: '+234 84 230 456', latitude: 4.7758, longitude: 7.0089 },
-  { state: 'Kaduna', name: 'ITF Kaduna Area Office', address: '3, Kanta Road, Kaduna', email: 'kaduna-ao@itf.gov.ng', phone: '+234 62 245 678', latitude: 10.5105, longitude: 7.4165 },
-  { state: 'Edo', name: 'ITF Benin Area Office', address: '122, Sapele Road, Benin City, Edo State', email: 'benin-ao@itf.gov.ng', phone: '+234 52 256 789', latitude: 6.3350, longitude: 5.6275 },
-  { state: 'Enugu', name: 'ITF Enugu Area Office', address: '10, Station Road, Enugu', email: 'enugu-ao@itf.gov.ng', phone: '+234 42 255 123', latitude: 6.4402, longitude: 7.5025 },
-  { state: 'Kano', name: 'ITF Kano Area Office', address: '2, Maiduguri Road, Kano', email: 'kano-ao@itf.gov.ng', phone: '+234 64 669 123', latitude: 11.9964, longitude: 8.5167 },
-  { state: 'Ogun', name: 'ITF Abeokuta Area Office', address: 'Secretariat Road, Oke-Mosan, Abeokuta, Ogun State', email: 'abeokuta-ao@itf.gov.ng', phone: '+234 39 240 123', latitude: 7.1475, longitude: 3.3614 },
-  { state: 'Osun', name: 'ITF Osogbo Area Office', address: 'Gbogan Road, Osogbo, Osun State', email: 'osogbo-ao@itf.gov.ng', phone: '+234 35 240 456', latitude: 7.7827, longitude: 4.5411 },
-  { state: 'Kwara', name: 'ITF Ilorin Area Office', address: 'Asa Dam Road, Ilorin, Kwara State', email: 'ilorin-ao@itf.gov.ng', phone: '+234 31 221 789', latitude: 8.4799, longitude: 4.5418 }
+  { state: 'Lagos (Ikeja)', name: 'ITF Ojota/Ikeja Area Office', address: '28, Olorunfunmi Street, Oregun (Behind Phillips Factory), Ojota, Lagos', email: 'ikeja-ao@itf.gov.ng', phone: '+234 1 270 4118', latitude: 6.5942, longitude: 3.3768 },
+  { state: 'Lagos (Apapa)', name: 'ITF Apapa Area Office', address: '19A, Ashanti Close (by Calcutta Crescent), Apapa, Lagos', email: 'apapa-ao@itf.gov.ng', phone: '+234 1 545 3290', latitude: 6.4475, longitude: 3.3631 },
+  { state: 'Lagos (Lekki)', name: 'ITF Lekki Area Office', address: '5, Remi Olowude Way, 2nd Roundabout, Lekki, Lagos', email: 'lekki-ao@itf.gov.ng', phone: '+234 1 270 4120', latitude: 6.4357, longitude: 3.4478 },
+  { state: 'Lagos (Isolo)', name: 'ITF Isolo Area Office', address: '43, Osolo Way, Ekwu Awolowo House, Ajao Estate, Isolo, Lagos', email: 'isolo-ao@itf.gov.ng', phone: '+234 1 452 2580', latitude: 6.5367, longitude: 3.3245 },
+  { state: 'Oyo', name: 'ITF Ibadan Area Office', address: 'Queen Elizabeth Road, Near PHCN Office, Agodi Total Garden, Ibadan, Oyo State', email: 'ibadan-ao@itf.gov.ng', phone: '+234 2 810 0345', latitude: 7.4088, longitude: 3.9110 },
+  { state: 'FCT - Abuja', name: 'ITF Abuja Area Office', address: '5th Floor, ITF House, No. 6, Adetokunbo Ademola Crescent, Wuse II, Abuja', email: 'abuja-ao@itf.gov.ng', phone: '+234 9 523 9308', latitude: 9.0792, longitude: 7.4893 },
+  { state: 'Rivers', name: 'ITF Port Harcourt Area Office', address: '1, ITF Close, off Secretariat Road, Port Harcourt, Rivers State', email: 'portharcourt-ao@itf.gov.ng', phone: '+234 84 230 456', latitude: 4.7891, longitude: 7.0142 },
+  { state: 'Kaduna', name: 'ITF Kaduna Area Office', address: '3, Kanta Road, Kaduna, Kaduna State', email: 'kaduna-ao@itf.gov.ng', phone: '+234 62 245 678', latitude: 10.5105, longitude: 7.4165 },
+  { state: 'Edo', name: 'ITF Benin Area Office', address: '122, Sapele Road, Benin City, Edo State', email: 'benin-ao@itf.gov.ng', phone: '+234 52 256 789', latitude: 6.3268, longitude: 5.6264 },
+  { state: 'Enugu', name: 'ITF Enugu Area Office', address: '10, Station Road, Enugu, Enugu State', email: 'enugu-ao@itf.gov.ng', phone: '+234 42 255 123', latitude: 6.4422, longitude: 7.5015 },
+  { state: 'Kano', name: 'ITF Kano Area Office', address: '2, Maiduguri Road, Kano, Kano State', email: 'kano-ao@itf.gov.ng', phone: '+234 64 669 123', latitude: 11.9886, longitude: 8.5323 },
+  { state: 'Ogun', name: 'ITF Abeokuta Area Office', address: 'Secretariat Road, Oke-Mosan, Abeokuta, Ogun State', email: 'abeokuta-ao@itf.gov.ng', phone: '+234 39 240 123', latitude: 7.1354, longitude: 3.3524 },
+  { state: 'Osun', name: 'ITF Osogbo Area Office', address: 'Gbogan Road, Osogbo, Osun State', email: 'osogbo-ao@itf.gov.ng', phone: '+234 35 240 456', latitude: 7.7684, longitude: 4.5612 },
+  { state: 'Kwara', name: 'ITF Ilorin Area Office', address: 'Asa Dam Road, Ilorin, Kwara State', email: 'ilorin-ao@itf.gov.ng', phone: '+234 31 221 789', latitude: 8.4682, longitude: 4.5324 }
 ];
 
 const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string, onLogout: () => void }) => {
@@ -810,7 +811,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
   const [applications, setApplications] = useState<any[]>([]);
   const [memos, setMemos] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'overview' | 'placement' | 'applications' | 'logbook' | 'memos' | 'profile' | 'siwes_letter' | 'itf_location'>('overview');
-  const [selectedState, setSelectedState] = useState('Lagos');
+  const [selectedState, setSelectedState] = useState('Lagos (Ikeja)');
   const [docSubTab, setDocSubTab] = useState<'commencement' | 'completion'>('commencement');
   const [showForm8Mockup, setShowForm8Mockup] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -845,135 +846,391 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
     
     // Helper function to draw borders
     const drawPageBorder = () => {
-      doc.setDrawColor(0);
-      doc.setLineWidth(0.5);
+      doc.setDrawColor(0, 102, 0); // Dark Green for ITF theme
+      doc.setLineWidth(0.8);
       doc.rect(10, 10, 190, 277); // Outer border
-      doc.setLineWidth(0.2);
-      doc.rect(12, 12, 186, 273); // Inner border
+      doc.setDrawColor(212, 175, 55); // Gold for inner border accent
+      doc.setLineWidth(0.3);
+      doc.rect(11.5, 11.5, 187, 274); // Inner border
     };
 
     if (docName.includes('ITF Form 8')) {
       // --- ITF FORM 8 GENERATION ---
       drawPageBorder();
       
-      // Header
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(16);
-      doc.text("INDUSTRIAL TRAINING FUND", 105, 25, { align: "center" });
-      doc.setFontSize(12);
-      doc.text("END-OF-PROGRAMME REPORT SHEET (ITF FORM 8)", 105, 33, { align: "center" });
-      doc.line(15, 37, 195, 37);
-
-      // PART A: Student
-      doc.setFontSize(11);
-      doc.setFillColor(230, 230, 230);
-      doc.rect(15, 42, 180, 8, 'FD');
-      doc.text("PART A (To be completed by the Student)", 105, 48, { align: "center" });
+      // Header Banner
+      doc.setFillColor(0, 102, 0); // Federal Green
+      doc.rect(12, 12, 186, 22, 'F');
       
-      doc.setFont("helvetica", "normal");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(15);
+      doc.setTextColor(255, 255, 255);
+      doc.text("INDUSTRIAL TRAINING FUND (ITF)", 105, 20, { align: "center" });
+      
+      doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
-      doc.text(`1. Name in Full:  ${studentName}`, 20, 58);
-      doc.text(`2. Registration/Matriculation No:  ${matNo}`, 20, 66);
-      doc.text(`3. Course of Study:  ${course}`, 20, 74);
-      doc.text(`4. Name of Institution:  Lead City University`, 20, 82);
-      doc.text(`5. Name and Address of Company attached:`, 20, 90);
-      doc.setFont("helvetica", "bold");
-      doc.text(`${companyName}, ${companyAddress}`, 25, 96);
-      
-      doc.setFont("helvetica", "normal");
-      doc.text(`6. Period of Attachment:   From: ________________ To: ________________`, 20, 106);
-      doc.text(`7. Brief outline of experience/relevance of training provided:`, 20, 116);
-      doc.line(20, 124, 190, 124);
-      doc.line(20, 132, 190, 132);
-      doc.line(20, 140, 190, 140);
-      
-      doc.text(`Signature of Student: _______________________    Date: _________________`, 20, 150);
+      doc.setTextColor(212, 175, 55); // Gold Accent
+      doc.text("FEDERAL REPUBLIC OF NIGERIA | SIWES DEPARTMENT", 105, 26, { align: "center" });
+      doc.text("END-OF-PROGRAMME REPORT SHEET (ITF FORM 8)", 105, 31, { align: "center" });
 
-      // PART B: Employer
+      // PART A: Student Info
+      doc.setFillColor(240, 245, 240);
+      doc.rect(15, 38, 180, 8, 'F');
+      doc.setDrawColor(0, 102, 0);
+      doc.setLineWidth(0.4);
+      doc.rect(15, 38, 180, 8, 'S');
+      
       doc.setFont("helvetica", "bold");
-      doc.setFillColor(230, 230, 230);
-      doc.rect(15, 158, 180, 8, 'FD');
-      doc.text("PART B (To be completed by the Employer)", 105, 164, { align: "center" });
+      doc.setFontSize(10);
+      doc.setTextColor(0, 102, 0);
+      doc.text("PART A (To be completed by the Student)", 105, 43, { align: "center" });
 
       doc.setFont("helvetica", "normal");
-      doc.text(`1. Do you agree with the student's comments?  Yes [   ]   No [   ]`, 20, 174);
-      doc.text(`2. Assess the student's overall performance:`, 20, 182);
-      doc.text(`   Very Good [   ]      Good [   ]      Satisfactory [   ]      Poor [   ]`, 20, 190);
-      doc.text(`3. Will you accept the student in future?  Yes [   ]   No [   ]`, 20, 198);
+      doc.setFontSize(9);
+      doc.setTextColor(0, 0, 0);
       
-      doc.text(`Name of Reporting Officer: _____________________________________`, 20, 210);
-      doc.text(`Designation/Rank: _____________________________________________`, 20, 218);
-      doc.text(`Signature & Official Stamp: ______________________ Date: _________`, 20, 226);
+      // Table-style Student Info fields
+      const drawField = (label: string, value: string, y: number) => {
+        doc.setFont("helvetica", "bold");
+        doc.text(label, 20, y);
+        doc.setFont("helvetica", "normal");
+        doc.text(value, 80, y);
+        doc.setDrawColor(220, 220, 220);
+        doc.setLineWidth(0.2);
+        doc.line(20, y + 2, 190, y + 2);
+      };
 
-      // PART C: Institution
+      drawField("1. Full Name of Student:", studentName.toUpperCase(), 53);
+      drawField("2. Matriculation Number:", matNo, 60);
+      drawField("3. Course of Study:", course, 67);
+      drawField("4. Name of Institution:", "Lead City University, Ibadan", 74);
+      drawField("5. Host Organization / Company:", companyName, 81);
+      drawField("6. Company Physical Address:", companyAddress, 88);
+      drawField("7. Period of Attachment:", "From: _____________________  To: _____________________", 95);
+
       doc.setFont("helvetica", "bold");
-      doc.setFillColor(230, 230, 230);
-      doc.rect(15, 234, 180, 8, 'FD');
-      doc.text("PART C (To be completed by the Institution)", 105, 240, { align: "center" });
-      
+      doc.text("8. Student's Brief Outline of Work Done & Experience:", 20, 104);
       doc.setFont("helvetica", "normal");
-      doc.text(`1. Number of visits made: ________   2. Overall Grade: A [ ]  B [ ]  C [ ]  D [ ]`, 20, 250);
-      doc.text(`Supervisor's Signature & Stamp: __________________ Date: _________`, 20, 260);
+      doc.setFontSize(8.5);
+      doc.setTextColor(80, 80, 80);
+      doc.text("Briefly summarize your technical roles, tools used, and key professional achievements below:", 20, 108);
+      doc.setTextColor(0, 0, 0);
 
-    } else if (docName.includes('SCAF')) {
+      // Multi-line guide lines
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.2);
+      doc.line(20, 116, 190, 116);
+      doc.line(20, 123, 190, 123);
+      doc.line(20, 130, 190, 130);
+      doc.line(20, 137, 190, 137);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.text("Student's Signature: _______________________    Date: _________________", 20, 146);
+
+      // PART B: Employer Info
+      doc.setFillColor(240, 245, 240);
+      doc.rect(15, 154, 180, 8, 'F');
+      doc.setDrawColor(0, 102, 0);
+      doc.rect(15, 154, 180, 8, 'S');
+      
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0, 102, 0);
+      doc.text("PART B (To be completed by the Employer / Industry Supervisor)", 105, 159, { align: "center" });
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(0, 0, 0);
+      
+      doc.text("1. Do you agree with the student's comments?  Yes [  ]   No [  ]", 20, 169);
+      doc.text("2. Assessment of student's overall performance & work ethics:", 20, 176);
+      doc.text("   [  ] Outstanding    [  ] Very Good    [  ] Good    [  ] Satisfactory    [  ] Unsatisfactory", 20, 182);
+      doc.text("3. Would you be willing to offer employment to this student in the future?  Yes [  ]   No [  ]", 20, 189);
+
+      // Signatures blocks
+      doc.text("Name of Industry Supervisor: _____________________________________", 20, 199);
+      doc.text("Designation / Rank: _____________________________________________", 20, 206);
+      doc.text("Signature & Date: ______________________", 20, 213);
+
+      // Employer Stamp Box
+      doc.setDrawColor(0, 102, 0);
+      doc.setLineWidth(0.4);
+      doc.rect(145, 193, 45, 23);
+      doc.setFontSize(7.5);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(150, 150, 150);
+      doc.text("OFFICIAL COMPANY", 167.5, 201, { align: "center" });
+      doc.text("STAMP & SEAL HERE", 167.5, 206, { align: "center" });
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(9);
+
+      // PART C: Institution Info
+      doc.setFillColor(240, 245, 240);
+      doc.rect(15, 222, 180, 8, 'F');
+      doc.setDrawColor(0, 102, 0);
+      doc.rect(15, 222, 180, 8, 'S');
+      
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0, 102, 0);
+      doc.text("PART C (To be completed by the University Institution Supervisor)", 105, 227, { align: "center" });
+
+      doc.setFont("helvetica", "normal");
+      doc.text("1. Total number of supervisory visits made to this establishment: ____________", 20, 238);
+      doc.text("2. Institutional Grade Score awarded (A - F): _________", 20, 245);
+      doc.text("University Supervisor Signature: __________________  Date: ______________", 20, 253);
+
+      // Institutional Stamp Box
+      doc.setDrawColor(0, 102, 0);
+      doc.rect(145, 232, 45, 23);
+      doc.setFontSize(7.5);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(150, 150, 150);
+      doc.text("UNIVERSITY SIWES", 167.5, 240, { align: "center" });
+      doc.text("OFFICE STAMP HERE", 167.5, 245, { align: "center" });
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(9);
+
+      // PAGE 2: Dynamic Weekly Logbook summary for Final completion Form 8
+      if (docName.includes('Final Section') || docName.includes('Completion')) {
+        doc.addPage();
+        drawPageBorder();
+
+        // Page 2 Header Banner
+        doc.setFillColor(0, 102, 0);
+        doc.rect(12, 12, 186, 22, 'F');
+        
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(15);
+        doc.setTextColor(255, 255, 255);
+        doc.text("INDUSTRIAL TRAINING FUND (ITF)", 105, 20, { align: "center" });
+        
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.setTextColor(212, 175, 55);
+        doc.text("PART D: DYNAMIC WEEKLY LOGBOOK RECORD TRANSCRIPT", 105, 28, { align: "center" });
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5);
+        doc.setTextColor(0, 0, 0);
+        doc.text("This page displays a dynamic transcript of logbook entries recorded by the student and verified via SIWES GPS tracking.", 15, 41);
+
+        // Draw Table Header
+        doc.setFillColor(235, 240, 235);
+        doc.rect(15, 46, 180, 8, 'F');
+        doc.setDrawColor(0, 102, 0);
+        doc.rect(15, 46, 180, 8, 'S');
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8);
+        doc.text("WEEK", 22, 51);
+        doc.text("DATE", 40, 51);
+        doc.text("SUMMARY OF DAILY TECHNICAL WORK PERFORMED", 70, 51);
+        doc.text("GPS STATUS", 172, 51);
+
+        let yPos = 54;
+        
+        // Take up to latest 15 logbook entries or group them
+        const displayLogs = logbook.slice(0, 15);
+        
+        if (displayLogs.length === 0) {
+          // If empty, draw blank rows for writing
+          for (let k = 1; k <= 10; k++) {
+            doc.rect(15, yPos, 180, 10, 'S');
+            doc.setFont("helvetica", "normal");
+            doc.text(`Week ${k}`, 20, yPos + 6);
+            doc.line(35, yPos, 35, yPos + 10);
+            doc.line(65, yPos, 65, yPos + 10);
+            doc.line(165, yPos, 165, yPos + 10);
+            yPos += 10;
+          }
+        } else {
+          displayLogs.forEach((log, index) => {
+            doc.setDrawColor(200, 200, 200);
+            doc.rect(15, yPos, 180, 12, 'S');
+            
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(7.5);
+            doc.text(`Week ${index + 1}`, 18, yPos + 7);
+            
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(7.5);
+            doc.text(log.date, 37, yPos + 7);
+            
+            // Format activity text to fit
+            const actStr = log.activity_description.length > 70 
+              ? log.activity_description.substring(0, 68) + '...'
+              : log.activity_description;
+            doc.text(actStr, 67, yPos + 7);
+            
+            // Status badge text
+            const statusText = log.verification_status === 'VERIFIED' ? 'Inside Geofence' : 'Outside Geofence';
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(log.verification_status === 'VERIFIED' ? 22 : 220, log.verification_status === 'VERIFIED' ? 120 : 50, log.verification_status === 'VERIFIED' ? 22 : 50);
+            doc.text(statusText, 168, yPos + 7);
+            doc.setTextColor(0, 0, 0);
+
+            // Columns separation lines
+            doc.setDrawColor(0, 102, 0);
+            doc.line(35, yPos, 35, yPos + 12);
+            doc.line(65, yPos, 65, yPos + 12);
+            doc.line(165, yPos, 165, yPos + 12);
+
+            yPos += 12;
+          });
+        }
+
+        // Closing sign offs on page 2
+        yPos += 8;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8.5);
+        doc.text("CERTIFICATION OF ENTRIES:", 15, yPos);
+        doc.setFont("helvetica", "normal");
+        doc.text("I hereby certify that the weekly records above represent an accurate account of the training undertaken.", 15, yPos + 5);
+
+        yPos += 16;
+        doc.text("Student's Signature / Date: __________________", 15, yPos);
+        doc.text("Industry Supervisor Signature / Date: __________________", 108, yPos);
+      }
+
+      doc.save(`ITF_Form_8_${(user?.fullName || 'User').replace(/ /g, '_')}.pdf`);
+      toast.success('Official Form 8 Report Sheet downloaded!');
+      return;
+
+    } else if (docName.includes('SCAF') || docName.includes('Commencement')) {
       // --- SCAF FORM (SPE-1) GENERATION ---
       drawPageBorder();
       
-      // Header
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(16);
-      doc.text("STUDENT'S COMMENCEMENT OF ATTACHMENT FORM", 105, 25, { align: "center" });
-      doc.setFontSize(12);
-      doc.text("(SCAF / SPE-1)", 105, 33, { align: "center" });
-      doc.line(15, 37, 195, 37);
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.text(`This form must be completed and returned to the ITF Area Office immediately upon assumption of duty.`, 105, 43, { align: "center" });
-
-      // Student Details
-      doc.setFont("helvetica", "bold");
-      doc.setFillColor(230, 230, 230);
-      doc.rect(15, 52, 180, 8, 'FD');
-      doc.text("SECTION 1: STUDENT DETAILS", 105, 58, { align: "center" });
-
-      doc.setFont("helvetica", "normal");
-      doc.text(`Name of Student:  ${studentName}`, 20, 68);
-      doc.text(`Registration/Matriculation No:  ${matNo}`, 20, 78);
-      doc.text(`Course of Study:  ${course}`, 20, 88);
-      doc.text(`Level/Year of Study:  400L (Standard)`, 20, 98);
-      doc.text(`Name of Institution:  Lead City University`, 20, 108);
-
-      // Employer Details
-      doc.setFont("helvetica", "bold");
-      doc.setFillColor(230, 230, 230);
-      doc.rect(15, 118, 180, 8, 'FD');
-      doc.text("SECTION 2: EMPLOYER / ATTACHMENT DETAILS", 105, 124, { align: "center" });
-
-      doc.setFont("helvetica", "normal");
-      doc.text(`Name of Company/Establishment:`, 20, 134);
-      doc.setFont("helvetica", "bold");
-      doc.text(`${companyName}`, 25, 140);
-      doc.setFont("helvetica", "normal");
+      // Header Banner
+      doc.setFillColor(0, 102, 0); // Federal Green
+      doc.rect(12, 12, 186, 22, 'F');
       
-      doc.text(`Exact Location Address:`, 20, 150);
       doc.setFont("helvetica", "bold");
-      doc.text(`${companyAddress}`, 25, 156);
-      doc.setFont("helvetica", "normal");
+      doc.setFontSize(14);
+      doc.setTextColor(255, 255, 255);
+      doc.text("INDUSTRIAL TRAINING FUND (ITF)", 105, 18, { align: "center" });
       
-      doc.text(`Date of Commencement: ______________________`, 20, 170);
-      doc.text(`Name of Industry-based Supervisor: ______________________________`, 20, 180);
-      doc.text(`Supervisor's Phone Number: _____________________________________`, 20, 190);
+      doc.setFontSize(9);
+      doc.setTextColor(212, 175, 55); // Gold Accent
+      doc.text("STUDENTS' COMMENCEMENT OF ATTACHMENT FORM (SCAF)", 105, 24, { align: "center" });
+      doc.text("FORM SPE - 1 | OFFICIAL PLACEMENT RECORD", 105, 29, { align: "center" });
 
-      // Signatures
-      doc.rect(15, 210, 180, 40);
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(8);
+      doc.setTextColor(120, 120, 120);
+      doc.text("This form must be completed in duplicate by the Student and the Employer immediately upon assumption of duty", 105, 38, { align: "center" });
+      doc.text("and returned to the nearest ITF Area Office within two (2) weeks of commencement.", 105, 42, { align: "center" });
+
+      // SECTION 1: STUDENT DETAILS
+      doc.setFillColor(240, 245, 240);
+      doc.rect(15, 48, 180, 8, 'F');
+      doc.setDrawColor(0, 102, 0);
+      doc.setLineWidth(0.4);
+      doc.rect(15, 48, 180, 8, 'S');
+      
       doc.setFont("helvetica", "bold");
-      doc.text(`SIGNATURES`, 105, 218, { align: "center" });
-      
-      doc.setFont("helvetica", "normal");
-      doc.text(`Student's Signature: ______________________    Date: ______________`, 20, 230);
-      doc.text(`Industry Supervisor Signature & Stamp: _________________  Date: ________`, 20, 240);
+      doc.setFontSize(9.5);
+      doc.setTextColor(0, 102, 0);
+      doc.text("SECTION 1: STUDENT PERSONAL PARTICULARS", 105, 53, { align: "center" });
 
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(0, 0, 0);
+
+      const drawField = (label: string, value: string, y: number) => {
+        doc.setFont("helvetica", "bold");
+        doc.text(label, 20, y);
+        doc.setFont("helvetica", "normal");
+        doc.text(value, 80, y);
+        doc.setDrawColor(220, 220, 220);
+        doc.setLineWidth(0.2);
+        doc.line(20, y + 2, 190, y + 2);
+      };
+
+      drawField("Full Name of Student:", studentName.toUpperCase(), 63);
+      drawField("Matriculation / Registration No:", matNo, 70);
+      drawField("Course of Study:", course, 77);
+      drawField("Department:", dept, 84);
+      drawField("Name of Institution:", "Lead City University, Ibadan, Oyo State", 91);
+      drawField("Academic Level of Study:", "400 Level (Standard 6-Month Attachment)", 98);
+
+      // SECTION 2: EMPLOYER DETAILS
+      doc.setFillColor(240, 245, 240);
+      doc.rect(15, 107, 180, 8, 'F');
+      doc.setDrawColor(0, 102, 0);
+      doc.rect(15, 107, 180, 8, 'S');
+      
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0, 102, 0);
+      doc.text("SECTION 2: PLACEMENT EMPLOYER CONFIRMATION", 105, 112, { align: "center" });
+
+      doc.setFont("helvetica", "normal");
+      drawField("Name of host Company / Firm:", companyName, 122);
+      drawField("Exact Physical Site Address:", companyAddress, 129);
+      drawField("Date of Assumption / Commencement:", "________ / ________ / 2026", 136);
+      drawField("Industry-based Supervisor's Name:", "____________________________________________", 143);
+      drawField("Supervisor's Designation / Phone:", "____________________________________________", 150);
+
+      // SECTION 3: SIGNATURES & STAMPS
+      doc.setFillColor(240, 245, 240);
+      doc.rect(15, 159, 180, 8, 'F');
+      doc.setDrawColor(0, 102, 0);
+      doc.rect(15, 159, 180, 8, 'S');
+      
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0, 102, 0);
+      doc.text("SECTION 3: ATTESTATION AND APPROVALS", 105, 164, { align: "center" });
+
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(0, 0, 0);
+      
+      // Signature lines
+      doc.text("Student's Signature: _________________________", 20, 178);
+      doc.text("Date Signed: _____/_____/2026", 130, 178);
+      
+      doc.text("HR Manager / Employer Signature: __________________", 20, 188);
+      doc.text("Date Signed: _____/_____/2026", 130, 188);
+
+      // HR Stamp Box
+      doc.setDrawColor(0, 102, 0);
+      doc.rect(145, 196, 45, 24);
+      doc.setFontSize(7.5);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(150, 150, 150);
+      doc.text("OFFICIAL EMPLOYER", 167.5, 204, { align: "center" });
+      doc.text("STAMP & SEAL HERE", 167.5, 209, { align: "center" });
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(9);
+
+      // SECTION 4: FOR ITF OFFICIAL USE ONLY
+      doc.setFillColor(240, 245, 240);
+      doc.rect(15, 226, 180, 8, 'F');
+      doc.setDrawColor(0, 102, 0);
+      doc.rect(15, 226, 180, 8, 'S');
+      
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0, 102, 0);
+      doc.text("SECTION 4: FOR ITF OFFICIAL USE ONLY (ITF AREA OFFICE)", 105, 231, { align: "center" });
+
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(0, 0, 0);
+      doc.text("Commencement record accepted?   Yes [  ]   No [  ]", 20, 243);
+      doc.text("ITF Receiving Officer Name: _____________________________________________", 20, 250);
+      doc.text("Officer Signature / Date: ______________________", 20, 257);
+
+      // ITF Stamp Box
+      doc.setDrawColor(0, 102, 0);
+      doc.rect(145, 236, 45, 24);
+      doc.setFontSize(7.5);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(150, 150, 150);
+      doc.text("ITF AREA OFFICE", 167.5, 244, { align: "center" });
+      doc.text("RECEIVED STAMP HERE", 167.5, 249, { align: "center" });
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(9);
+
+      doc.save(`ITF_SCAF_Form_${(user?.fullName || 'User').replace(/ /g, '_')}.pdf`);
+      toast.success('Official SCAF Form (SPE-1) downloaded!');
+      return;
     } else {
       // --- SIWES REPORT OUTLINE GENERATION ---
       drawPageBorder();
