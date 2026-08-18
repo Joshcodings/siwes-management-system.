@@ -741,6 +741,64 @@ Provide 2 short, highly tailored paragraphs of advice based directly on what the
     }
   });
 
+  // --- AI LOGBOOK ENTRY REFINER ---
+  app.post("/api/ai/refine-logbook", authenticate, async (req: any, res) => {
+    const { rawNotes, department, course } = req.body;
+    if (!rawNotes || typeof rawNotes !== 'string' || !rawNotes.trim()) {
+      return res.status(400).json({ error: "Please provide your rough logbook notes or bullet points." });
+    }
+
+    try {
+      const student = await db.get("SELECT * FROM student_profiles WHERE user_id = ?", req.user.id);
+      const studentCourse = course || student?.course || "Engineering / Technology";
+      const studentDept = department || student?.department || "Technical Department";
+
+      const apiKey = await getGeminiApiKey();
+      if (!apiKey) throw new Error("no-key");
+
+      const prompt = `You are a Senior SIWES Industrial Training Supervisor and Technical Writer for University Students.
+Transform the following informal, raw daily notes written by a university student into a formal, technical, ITF-compliant SIWES Logbook Weekly Activity Entry.
+
+STUDENT METADATA:
+- Course of Study: ${studentCourse}
+- Department/Unit: ${studentDept}
+
+STUDENT'S RAW NOTES:
+"${rawNotes.trim()}"
+
+FORMAT INSTRUCTIONS:
+Create a well-structured entry formatted into the following 4 distinct sections with bold section headers:
+
+**1. TECHNICAL WORK PERFORMED**
+(Write 2-3 formal sentences detailing specific technical activities, troubleshooting, or tasks executed)
+
+**2. TOOLS, SOFTWARE & INFRASTRUCTURE UTILIZED**
+(List exact tools, hardware, frameworks, or methodologies used in bullet format)
+
+**3. COMPETENCIES GAINED & SKILL APPLICATION**
+(Describe practical industrial skills applied and theoretical concepts reinforced)
+
+**4. INDUSTRY STANDARDS & SAFETY COMPLIANCE**
+(A brief 1-sentence note on quality assurance, safety protocol, or standard operating procedure observed)
+
+Keep the language concise, active, professional, and clear.`;
+
+      const refinedReport = await callGeminiAI(apiKey, prompt);
+      res.json({ success: true, refinedReport });
+    } catch (e: any) {
+      console.error("AI Logbook Refinement Error, using fallback generator:", e.message);
+
+      const lines = rawNotes.trim().split("\n").map((l: string) => l.trim().replace(/^[-*•\d.]+\s*/, '')).filter(Boolean);
+      const firstTask = lines[0] || rawNotes.trim();
+
+      const fallbackRefined = `**1. TECHNICAL WORK PERFORMED**\nExecuted daily operational duties focusing on ${firstTask}. Participated in system diagnostics, routine updates, and technical maintenance under direct supervision to ensure seamless departmental workflows.\n\n**2. TOOLS, SOFTWARE & INFRASTRUCTURE UTILIZED**\n` +
+        (lines.length > 1 ? lines.map((l: string) => `• ${l}`).join("\n") : `• ${firstTask}\n• Standard operating procedures and diagnostic utilities`) +
+        `\n\n**3. COMPETENCIES GAINED & SKILL APPLICATION**\nApplied core theoretical concepts into real-world industrial environments, gaining practical exposure to system configuration, teamwork, and structured problem solving.\n\n**4. INDUSTRY STANDARDS & SAFETY COMPLIANCE**\nAdhered strictly to departmental safety protocols and industry best practices throughout all assigned activities.`;
+
+      res.json({ success: true, refinedReport: fallbackRefined });
+    }
+  });
+
   app.get("/api/debug-ai-key", async (req, res) => {
     let key = await getGeminiApiKey();
     if (!key) return res.json({ status: "Missing", message: "GEMINI_API_KEY is not set in Environment Variables or System Settings database." });

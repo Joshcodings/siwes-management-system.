@@ -1353,6 +1353,40 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
   const [siwesDuration, setSiwesDuration] = useState('6 Months');
   const [siwesCompany, setSiwesCompany] = useState('');
   const [siwesCompanyAddress, setSiwesCompanyAddress] = useState('');
+  const [isRefining, setIsRefining] = useState(false);
+
+  const handleRefineLogbook = async () => {
+    if (!newLog.activity.trim()) {
+      toast.error('Please write some rough notes or bullet points first before refining!');
+      return;
+    }
+    setIsRefining(true);
+    try {
+      const res = await fetch('/api/ai/refine-logbook', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          rawNotes: newLog.activity,
+          department: profile?.department,
+          course: profile?.course
+        })
+      });
+      const data = await res.json();
+      if (data.success && data.refinedReport) {
+        setNewLog({ ...newLog, activity: data.refinedReport });
+        toast.success('Logbook entry refined to ITF technical standard!');
+      } else {
+        toast.error(data.error || 'Failed to refine logbook entry');
+      }
+    } catch (e: any) {
+      toast.error('AI refinement error. Please try again.');
+    } finally {
+      setIsRefining(false);
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -2958,18 +2992,33 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
 
                          {/* Caption — what you learned */}
                          <div>
-                           <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">
-                             What did you learn today? <span className="text-red-400">*</span>
-                           </label>
-                           <textarea
-                             value={newLog.activity}
-                             onChange={(e) => setNewLog({ ...newLog, activity: e.target.value })}
-                             placeholder="e.g. I learned how to configure a VLAN switch and assisted the network team with cable routing..."
-                             className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#5A5A40] min-h-[110px] resize-none text-sm"
-                             required
-                           />
-                           <p className="text-[10px] text-gray-400 mt-1">{newLog.activity.length} characters — keep it concise but meaningful</p>
-                         </div>
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400">
+                                What did you learn today? <span className="text-red-400">*</span>
+                              </label>
+                              <button
+                                type="button"
+                                onClick={handleRefineLogbook}
+                                disabled={isRefining || !newLog.activity.trim()}
+                                className="flex items-center gap-1.5 text-xs font-semibold text-[#5A5A40] bg-[#5A5A40]/10 hover:bg-[#5A5A40]/20 px-3 py-1 rounded-full transition-all disabled:opacity-50"
+                                title="Transform rough notes into a technical, ITF-compliant SIWES entry"
+                              >
+                                <Sparkles size={12} className={isRefining ? "animate-spin text-[#5A5A40]" : "text-[#5A5A40]"} />
+                                {isRefining ? 'Refining with AI...' : '✨ Refine with AI'}
+                              </button>
+                            </div>
+                            <textarea
+                              value={newLog.activity}
+                              onChange={(e) => setNewLog({ ...newLog, activity: e.target.value })}
+                              placeholder="e.g. Type rough bullet points like: setup router, tested VLANs, assisted database admin... then click Refine with AI!"
+                              className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#5A5A40] min-h-[140px] resize-y text-sm font-jakarta"
+                              required
+                            />
+                            <p className="text-[10px] text-gray-400 mt-1 flex justify-between items-center flex-wrap gap-1">
+                              <span>{newLog.activity.length} characters</span>
+                              <span className="text-[#5A5A40] font-medium">Tip: Type quick notes & click ✨ Refine with AI for ITF standards</span>
+                            </p>
+                          </div>
 
                          {/* Optional logbook photo */}
                          <div>
