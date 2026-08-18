@@ -507,53 +507,53 @@ const Login = ({ onLogin }: { onLogin: (user: User, token: string) => void }) =>
   };
 
   return (
-    <div className="min-h-[100dvh] bg-[#F5F5F0] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+    <div className="min-h-[100dvh] bg-[#F5F5F0] flex items-center justify-center p-4 sm:p-6 overflow-hidden font-jakarta">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="bg-white p-6 sm:p-10 rounded-[28px] shadow-xl w-full max-w-md mx-auto border border-black/5 relative">
         {screen === 'login' && (
           <div className="text-center mb-8">
             <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background:'linear-gradient(135deg,#5A5A40,#8a8a60)', boxShadow:'0 10px 30px rgba(90,90,64,0.3)' }}>
               <GraduationCap size={28} className="text-white" />
             </div>
-            <h1 className="font-serif text-3xl font-bold text-[#1A1A1A] mb-1">SIWES Portal</h1>
-            <p className="text-[10px] text-gray-500 uppercase tracking-widest">{isRegistering ? 'CREATE YOUR ACCOUNT' : 'INTELLIGENT PLACEMENT SYSTEM'}</p>
+            <h1 className="font-display text-3xl font-extrabold tracking-tight text-[#1A1A1A] mb-1">SIWES Portal</h1>
+            <p className="font-outfit text-[11px] font-semibold text-[#5A5A40] uppercase tracking-[0.2em]">{isRegistering ? 'CREATE YOUR ACCOUNT' : 'INTELLIGENT PLACEMENT SYSTEM'}</p>
           </div>
         )}
 
         {screen === 'verify' && (
-          <div className="text-center mb-8">
+          <div className="text-center mb-8 font-jakarta">
             <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background:'linear-gradient(135deg,#5A5A40,#8a8a60)', boxShadow:'0 10px 30px rgba(90,90,64,0.3)' }}>
               <Mail size={28} className="text-white" />
             </div>
-            <h1 className="font-serif text-2xl font-bold text-[#1A1A1A] mb-1">Check Your Email</h1>
-            <p className="text-sm text-gray-500">We sent a 6-digit code to <strong>{email}</strong></p>
+            <h1 className="font-display text-2xl font-bold text-[#1A1A1A] mb-1">Check Your Email</h1>
+            <p className="font-jakarta text-sm text-gray-500">We sent a 6-digit code to <strong>{email}</strong></p>
             <form onSubmit={handleVerifyOtp} className="mt-6">
-              <input type="text" maxLength={6} value={otpCode} onChange={e => setOtpCode(e.target.value)} className="w-full text-center text-2xl tracking-[0.5em] px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#5A5A40]" required />
-              <button type="submit" disabled={loading} className="w-full mt-4 bg-[#5A5A40] text-white py-4 rounded-full font-medium hover:bg-[#4A4A30]">Verify Code</button>
+              <input type="text" maxLength={6} value={otpCode} onChange={e => setOtpCode(e.target.value)} className="w-full text-center font-display text-2xl font-bold tracking-[0.5em] px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#5A5A40]" required />
+              <button type="submit" disabled={loading} className="w-full mt-4 bg-[#5A5A40] text-white py-3.5 rounded-full font-outfit font-bold hover:bg-[#4A4A30] transition-colors">Verify Code</button>
             </form>
           </div>
         )}
 
         {screen === 'forgot' && (
-          <div>
-            <h2 className="font-serif text-xl mb-2">Reset Password</h2>
-            <p className="text-sm text-gray-500 mb-6">Enter your email and we'll send you a reset link.</p>
+          <div className="font-jakarta">
+            <h2 className="font-display text-xl font-bold mb-2">Reset Password</h2>
+            <p className="font-jakarta text-sm text-gray-500 mb-6">Enter your email and we'll send you a reset link.</p>
             <form onSubmit={handleForgotPassword} className="space-y-4">
-              <input type="email" placeholder="Your email address" value={resetEmail} onChange={e => setResetEmail(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#5A5A40]" required />
-              <button type="submit" disabled={loading} className="w-full bg-[#5A5A40] text-white py-4 rounded-full font-medium hover:bg-[#4A4A30] transition-colors disabled:opacity-60">
+              <input type="email" placeholder="Your email address" value={resetEmail} onChange={e => setResetEmail(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 font-jakarta focus:outline-none focus:ring-2 focus:ring-[#5A5A40]" required />
+              <button type="submit" disabled={loading} className="w-full bg-[#5A5A40] text-white py-3.5 rounded-full font-outfit font-bold hover:bg-[#4A4A30] transition-colors disabled:opacity-60">
                 {loading ? 'Sending...' : 'Send Reset Link'}
               </button>
             </form>
-            <button onClick={() => setScreen('login')} className="mt-4 text-sm text-[#5A5A40] hover:underline w-full text-center">← Back to Sign In</button>
+            <button onClick={() => setScreen('login')} className="mt-4 text-sm font-jakarta font-semibold text-[#5A5A40] hover:underline w-full text-center">← Back to Sign In</button>
           </div>
         )}
 
         {screen === 'reset' && (
-          <div>
-            <h2 className="font-serif text-xl mb-2">Set New Password</h2>
-            <p className="text-sm text-gray-500 mb-6">Choose a strong new password (min. 8 characters).</p>
+          <div className="font-jakarta">
+            <h2 className="font-display text-xl font-bold mb-2">Set New Password</h2>
+            <p className="font-jakarta text-sm text-gray-500 mb-6">Choose a strong new password (min. 8 characters).</p>
             <form onSubmit={handleResetPassword} className="space-y-4">
-              <input type="password" placeholder="New password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#5A5A40]" minLength={8} required />
-              <button type="submit" disabled={loading} className="w-full bg-[#5A5A40] text-white py-4 rounded-full font-medium hover:bg-[#4A4A30] transition-colors disabled:opacity-60">
+              <input type="password" placeholder="New password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 font-jakarta focus:outline-none focus:ring-2 focus:ring-[#5A5A40]" minLength={8} required />
+              <button type="submit" disabled={loading} className="w-full bg-[#5A5A40] text-white py-3.5 rounded-full font-outfit font-bold hover:bg-[#4A4A30] transition-colors disabled:opacity-60">
                 {loading ? 'Saving...' : 'Update Password'}
               </button>
             </form>
@@ -562,50 +562,50 @@ const Login = ({ onLogin }: { onLogin: (user: User, token: string) => void }) =>
 
         {screen === 'login' && (
           <>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4 font-jakarta">
               {isRegistering && (
                 <>
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Full Name</label>
-                    <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#5A5A40] transition-all" required />
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1">Full Name</label>
+                    <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 font-jakarta font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#5A5A40] transition-all" required />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Matriculation Number</label>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1">Matriculation Number</label>
                     <input 
                       type="text" 
                       placeholder="e.g. LCU/UG/22/21549" 
                       value={matNumber} 
                       onChange={(e) => setMatNumber(e.target.value)} 
-                      className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#5A5A40] transition-all uppercase" 
+                      className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 font-jakarta font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#5A5A40] transition-all uppercase" 
                       required 
                     />
                   </div>
                 </>
               )}
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Email Address</label>
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#5A5A40] transition-all" required />
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1">Email Address</label>
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 font-jakarta font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#5A5A40] transition-all" required />
               </div>
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400">Password</label>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500">Password</label>
                   {!isRegistering && (
-                    <button type="button" onClick={() => setScreen('forgot')} className="text-xs text-[#5A5A40] hover:underline">Forgot password?</button>
+                    <button type="button" onClick={() => setScreen('forgot')} className="text-xs font-jakarta font-semibold text-[#5A5A40] hover:underline">Forgot password?</button>
                   )}
                 </div>
                 <div className="relative">
-                  <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-4 py-3 pr-12 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#5A5A40] transition-all" minLength={isRegistering ? 8 : undefined} required />
+                  <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-4 py-3 pr-12 rounded-xl bg-gray-50 border border-gray-200 font-jakarta font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#5A5A40] transition-all" minLength={isRegistering ? 8 : undefined} required />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
-                {isRegistering && <p className="text-xs text-gray-400 mt-1">Must be at least 8 characters</p>}
+                {isRegistering && <p className="text-xs font-jakarta text-gray-400 mt-1">Must be at least 8 characters</p>}
               </div>
               {!isRegistering && (
                 <div className="flex items-center justify-between">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)} className="w-4 h-4 accent-[#5A5A40] rounded" />
-                    <span className="text-sm text-gray-500">Remember me</span>
+                    <span className="text-sm font-jakarta text-gray-500 font-medium">Remember me</span>
                   </label>
                 </div>
               )}
@@ -613,7 +613,7 @@ const Login = ({ onLogin }: { onLogin: (user: User, token: string) => void }) =>
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.98 }}
                 type="submit" disabled={loading}
-                className="w-full bg-[#5A5A40] text-white py-4 rounded-2xl font-semibold tracking-wide hover:bg-[#4A4A30] transition-all shadow-xl shadow-[#5A5A40]/30 mt-2 disabled:opacity-60 flex items-center justify-center gap-2"
+                className="w-full bg-[#5A5A40] text-white py-3.5 rounded-2xl font-outfit font-bold text-base tracking-wide hover:bg-[#4A4A30] transition-all shadow-xl shadow-[#5A5A40]/30 mt-2 disabled:opacity-60 flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <><svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Please wait...</>
@@ -621,7 +621,7 @@ const Login = ({ onLogin }: { onLogin: (user: User, token: string) => void }) =>
               </motion.button>
             </form>
             <div className="mt-6 text-center">
-              <button onClick={() => setIsRegistering(!isRegistering)} className="text-sm text-[#5A5A40] font-medium hover:underline">
+              <button onClick={() => setIsRegistering(!isRegistering)} className="text-sm font-jakarta text-[#5A5A40] font-semibold hover:underline">
                 {isRegistering ? 'Already have an account? Sign In' : "Don't have an account? Register"}
               </button>
             </div>
