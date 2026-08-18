@@ -737,7 +737,7 @@ const NotificationBell = ({ token }: { token: string }) => {
                   Mark all read
                 </button>
               )}
-              <button onClick={() => setOpen(false)} className="text-white/60 hover:text-white text-lg leading-none">✕</button>
+              <button onClick={() => setOpen(false)} className="text-white/60 hover:text-white flex items-center justify-center p-1 rounded-lg hover:bg-white/10 transition-colors"><X size={16} /></button>
             </div>
           </div>
 
@@ -2500,7 +2500,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                         onChange={e => setMapSearch(e.target.value)}
                         className="w-full pl-12 pr-4 py-2.5 rounded-2xl bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#5A5A40] text-sm shadow-sm"
                       />
-                      {mapSearch && <button onClick={() => setMapSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs">✕</button>}
+                      {mapSearch && <button onClick={() => setMapSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 flex items-center justify-center"><X size={14} /></button>}
                     </div>
                     {/* Legend */}
                     <div className="flex gap-3 text-xs flex-wrap">
@@ -2630,7 +2630,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                         </button>
                       );
                     })}
-                    {mapSearch && <button onClick={() => setMapSearch('')} className="px-3 py-1.5 bg-red-50 border border-red-200 rounded-full text-xs font-medium text-red-600">✕ Clear filter</button>}
+                    {mapSearch && <button onClick={() => setMapSearch('')} className="px-3 py-1.5 bg-red-50 border border-red-200 rounded-full text-xs font-medium text-red-600 flex items-center gap-1"><X size={12} /> Clear filter</button>}
                   </div>
                 </div>
               )}
@@ -2978,7 +2978,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                                {isLiveVerified ? (
                                  <>
                                    <CheckCircle2 size={14} className="text-emerald-500" />
-                                   <span className="text-emerald-700 font-medium">Inside Geofence ✓</span>
+                                   <span className="text-emerald-700 font-medium">Inside Geofence</span>
                                  </>
                                ) : (
                                  <>
@@ -3004,7 +3004,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                                 title="Transform rough notes into a technical, ITF-compliant SIWES entry"
                               >
                                 <Sparkles size={12} className={isRefining ? "animate-spin text-[#5A5A40]" : "text-[#5A5A40]"} />
-                                {isRefining ? 'Refining with AI...' : '✨ Refine with AI'}
+                                {isRefining ? 'Refining with AI...' : 'Refine with AI'}
                               </button>
                             </div>
                             <textarea
@@ -3016,7 +3016,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                             />
                             <p className="text-[10px] text-gray-400 mt-1 flex justify-between items-center flex-wrap gap-1">
                               <span>{newLog.activity.length} characters</span>
-                              <span className="text-[#5A5A40] font-medium">Tip: Type quick notes & click ✨ Refine with AI for ITF standards</span>
+                              <span className="text-[#5A5A40] font-medium flex items-center gap-1">Tip: Type quick notes & click <Sparkles size={11} className="text-[#5A5A40]" /> Refine with AI for ITF standards</span>
                             </p>
                           </div>
 
@@ -3069,7 +3069,7 @@ const StudentDashboard = ({ user, token, onLogout }: { user: User, token: string
                          {lastSubmitted && (
                            <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3 animate-pulse">
                              <CheckCircle2 size={18} className="text-emerald-500 flex-shrink-0" />
-                             <p className="text-sm text-emerald-700 font-medium">Last submitted at {lastSubmitted} ✓</p>
+                             <p className="text-sm text-emerald-700 font-medium">Last submitted at {lastSubmitted}</p>
                            </div>
                          )}
 
@@ -4819,7 +4819,7 @@ const AdminDashboard = ({ user, token, onLogout }: { user: User, token: string, 
                   className="w-full pl-12 pr-4 py-3 rounded-2xl bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#5A5A40] text-sm shadow-sm"
                 />
                 {studentSearch && (
-                  <button onClick={() => setStudentSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs">✕ Clear</button>
+                  <button onClick={() => setStudentSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 flex items-center gap-1 text-xs font-medium"><X size={13} /> Clear</button>
                 )}
               </div>
               <p className="text-sm text-gray-400">{filteredStudents.length} of {students.length} students</p>

@@ -44,9 +44,9 @@ async function seed() {
     }
 
     const count = await db.get("SELECT COUNT(*) as count FROM companies");
-    console.log(`✅ Success! Seeded ${count.count} companies in production database!`);
+    console.log(`[SUCCESS] Seeded ${count.count} companies in production database!`);
   } catch (e: any) {
-    console.error(`❌ Seeding failed:`, e.message);
+    console.error(`[ERROR] Seeding failed:`, e.message);
   }
 }
 

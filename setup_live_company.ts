@@ -40,6 +40,6 @@ try {
   console.log(`Company "Live Workplace HQ" created (ID: ${newCompanyId}) at ${TARGET_LAT}, ${TARGET_LON}`);
   console.log(`User ID ${USER_ID} (Zoro) assigned and geofence synchronized.`);
 
-} catch (error) {
-  console.error("❌ Failed to setup live company:", error.message);
+} catch (error: any) {
+  console.error("[ERROR] Failed to setup live company:", error.message);
 }
