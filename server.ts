@@ -713,15 +713,29 @@ async function startServer() {
       const apiKey = await getGeminiApiKey();
       if (!apiKey) throw new Error("no-key");
 
-      const prompt = `You are a live AI Career Advisor providing real-time personalized guidance to a university SIWES student.
-CURRENT REAL-WORLD PROGRESS:
-- Student Profile: Course: ${student.course || 'General'}, Department: ${student.department || 'Technology'}
-- Skills: ${student.skills || 'Practical technical skills'}
-- Current Placement: ${companyInfo}
-- Recent Logged Work Activities:
+      const prompt = `You are an elite Senior SIWES Career Strategist and University Industrial Training Mentor advising a student pursuing ${student.course || 'Technology'}.
+
+CURRENT SIWES CONTEXT & REAL-WORLD METRICS:
+- Academic Course: ${student.course || 'General Degree'}
+- Target Department: ${student.department || 'Technical Unit'}
+- Listed Skills: ${student.skills || 'Core Technical Skills'}
+- Assigned Workplace: ${companyInfo}
+- Recent Logged Activities:
 ${logSummary}
 
-Provide 2 short, highly tailored paragraphs of advice based directly on what they are currently doing at their placement and their course of study. Point out specific skills to sharpen or next steps to take at work. Use bold markdown formatting.`;
+PROVIDE A HIGHLY EMPHATIC, STRUCTURED CAREER & PLACEMENT ROADMAP (Use bold headers & markdown bullets):
+
+🎯 **1. CORE TECHNICAL MASTERY & TOOLS TO EMPHASIZE**
+- Emphasize specific technical tools, frameworks, protocols, or methodologies that the student MUST master during this placement to gain an elite edge in ${student.course || 'their field'}.
+
+⚡ **2. HIGH-IMPACT WORKPLACE ACTIONS (SUPERVISOR ALIGNMENT)**
+- Emphasize 2-3 concrete steps the student should take at ${companyInfo} this week (e.g. requesting ownership of a core task, documenting technical architecture, conducting weekly check-ins with industry mentors).
+
+🏆 **3. SIWES LOGBOOK & FINAL DEFENSE STRATEGY**
+- Emphasize exact strategies for capturing daily metrics, diagrams, and technical deliverables in their SIWES logbook to guarantee top scores during university and ITF defense evaluations.
+
+🚀 **4. CAREER LAUNCH & POST-SIWES POSITIONING**
+- Emphasize how to leverage their current activities into a stand-out portfolio, LinkedIn profile, or full-time employment opportunity.`;
 
       const adviceText = await callGeminiAI(apiKey, prompt);
       res.json({ advice: adviceText });
@@ -730,12 +744,12 @@ Provide 2 short, highly tailored paragraphs of advice based directly on what the
       
       const lastActivity = recentLogs[0]?.activity_description 
         ? `"${recentLogs[0].activity_description.substring(0, 70)}..."` 
-        : "your recent daily tasks";
+        : "your daily technical activities";
       const companyStr = companyInfo !== "Not yet assigned to a company" ? companyInfo : "your internship placement";
       const skillsStr = (student && student.skills) ? student.skills : "your technical skills";
-      const courseStr = (student && student.course) ? student.course : "your degree";
+      const courseStr = (student && student.course) ? student.course : "your degree program";
 
-      const advice = `**Real-time Progress Insight for ${courseStr}**\n\nBased on your current work—including **${lastActivity}** at **${companyStr}**—you are actively applying **${skillsStr}** in a professional environment. Keep building on these practical deliverables to strengthen your technical portfolio.\n\n**Actionable Next Steps**\n\nDiscuss your progress with your supervisor and seek additional opportunities to leverage **${skillsStr}** on real-world projects. Documenting these specific outcomes will make your final SIWES report stand out to academic evaluators.`;
+      const advice = `🎯 **CORE TECHNICAL MASTERY & TOOLS TO EMPHASIZE**\nBased on your current work (**${lastActivity}**) at **${companyStr}**, prioritize mastering core industry-standard tools, frameworks, and workflows relevant to **${courseStr}**. Deepen your practical hands-on proficiency in **${skillsStr}** so you can operate independently on technical tasks.\n\n⚡ **HIGH-IMPACT WORKPLACE ACTIONS**\n• **Own Your Deliverables**: Proactively request ownership of specific sub-components or technical tasks at **${companyStr}**.\n• **Schedule Weekly Supervisor Reviews**: Present your logged work weekly to your industry supervisor to gather actionable feedback and demonstrate leadership initiative.\n• **Build Technical Documentation**: Keep personal notes of technical setups, terminal commands, and architecture diagrams you encounter.\n\n🏆 **SIWES LOGBOOK & FINAL DEFENSE STRATEGY**\nTo secure top marks during university and ITF SIWES defense, ensure every logbook entry contains clear technical verbs, exact software/hardware versions used, and quantifiable results (e.g. reduced load time, configured 5 subnets, resolved 12 tickets).\n\n🚀 **CAREER LAUNCH & POST-SIWES POSITIONING**\nTransform your daily achievements into a portfolio showcase project. Request a written recommendation or LinkedIn endorsement from your supervisor before your placement period concludes to accelerate your post-graduation job search.`;
       
       res.json({ advice });
     }
